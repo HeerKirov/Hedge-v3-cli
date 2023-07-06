@@ -1,0 +1,5 @@
+debug_mode = false
+application_path = "/opt/hedge/hedge"
+server_path = "~/.config/Hedge-v3/server"
+appdata_path = "~/.config/Hedge-v3/appdata"
+userdata_path = "~/.config/Hedge-v3"
