@@ -45,18 +45,10 @@ async fn main() {
             }
         }
         Cli::Import(import) => match import {
-            Import::Add { .. } => {
-
-            }
-            Import::List => {
-
-            }
-            Import::Batch { .. } => {
-
-            }
-            Import::Save => {
-
-            }
+            Import::Add { files, remove } => command::import::add(&mut context, &files, remove).await,
+            Import::List => command::import::list(&mut context).await,
+            Import::Batch { partition_time, create_time, order_time, analyse_source } => command::import::batch(&mut context, partition_time, create_time, order_time, analyse_source).await,
+            Import::Save => command::import::save(&mut context).await
         }
         Cli::SourceData(_) => {
 

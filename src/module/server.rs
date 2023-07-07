@@ -1,6 +1,6 @@
 use std::{path::PathBuf, fs::{self, File}, fmt, process::{Command, Stdio}, time::Duration};
 use reqwest::{Method, IntoUrl};
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use serde_json;
 
 use super::{config::LocalConfig, channel::ChannelManager};
@@ -112,7 +112,7 @@ impl ServerManager {
         self.address = Option::Some(format!("http://{}:{}", "localhost", port));
         self.token = Option::Some(token);
     }
-    async fn req<U, T>(&mut self, method: Method, path: U) -> Result<T, Box<dyn std::error::Error>> where U: IntoUrl, T: serde::de::DeserializeOwned {
+    pub async fn req<U, T>(&mut self, method: Method, path: U) -> Result<T, Box<dyn std::error::Error>> where U: IntoUrl, T: serde::de::DeserializeOwned {
         let url = self.address.as_ref().map(|address| format!("{}{}", address, path.as_str())).unwrap_or_else(|| path.as_str().to_string());
         let mut b = self.client.request(method, url);
         if let Some(token) = &self.token {
@@ -125,7 +125,7 @@ impl ServerManager {
             Err(e) => Result::Err(Box::new(e))
         }
     }
-    async fn req_with_body<U, T>(&mut self, method: Method, path: U, body: serde_json::Value) -> Result<T, Box<dyn std::error::Error>> where U: IntoUrl, T: serde::de::DeserializeOwned {
+    pub async fn req_with_body<U, T>(&mut self, method: Method, path: U, body: serde_json::Value) -> Result<T, Box<dyn std::error::Error>> where U: IntoUrl, T: serde::de::DeserializeOwned {
         let url = self.address.as_ref().map(|address| format!("{}{}", address, path.as_str())).unwrap_or_else(|| path.as_str().to_string());
         let body = serde_json::to_string(&body)?;
         let mut b = self.client.request(method, url).body(body);
@@ -175,6 +175,24 @@ pub struct ServerStatus {
 #[derive(PartialEq, Eq, Deserialize)]
 pub enum ServerStatusType {
     Stop, Starting, Loading, Running
+}
+
+#[derive(Deserialize, Serialize)]
+pub struct ListResult<T> {
+    pub total: i32,
+    pub result: Vec<T>
+}
+
+#[derive(Deserialize, Serialize)]
+pub struct IdWithWarning {
+    pub id: i32,
+    pub warnings: Vec<ErrorResult>
+}
+
+#[derive(Deserialize, Serialize)]
+pub struct ErrorResult {
+    pub code: String,
+    pub message: String
 }
 
 #[derive(Deserialize)]

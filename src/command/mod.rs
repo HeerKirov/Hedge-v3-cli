@@ -2,6 +2,7 @@ pub mod app;
 pub mod apply;
 pub mod channel;
 pub mod server;
+pub mod import;
 
 use crate::module::channel::ChannelManager;
 use crate::module::config::LocalConfig;

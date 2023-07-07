@@ -1,6 +1,7 @@
 use std::path::PathBuf;
-use clap::{Args, Parser, Subcommand, ValueEnum};
+use clap::{Args, Parser, Subcommand};
 use chrono::NaiveDate;
+use crate::module::import::OrderTimeType;
 
 #[derive(Parser)]
 #[command(bin_name = "hedge", name = "hedge", version, about = "Hedge Command Line Application")]
@@ -95,9 +96,3 @@ pub enum SourceData {
     Connect
 }
 
-#[derive(Clone, ValueEnum)]
-pub enum OrderTimeType {
-    CreateTime,
-    UpdateTime,
-    ImportTime
-}
