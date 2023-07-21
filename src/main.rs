@@ -3,7 +3,7 @@ mod command;
 mod module;
 
 use clap::Parser;
-use cli::{Cli, Import, Channel, Server};
+use cli::{Cli, Import, Channel, Server, SourceData};
 use command::apply::ApplyInputType;
 use module::local_data::LocalDataManager;
 use module::channel::ChannelManager;
@@ -33,25 +33,25 @@ async fn main() {
             Server::Start => command::server::start(&mut context).await,
             Server::Stop => command::server::stop(&mut context).await
         }
-        Cli::Apply(apply) => {
-            if let Some(f) = apply.directory { 
-                command::apply::apply(&context, ApplyInputType::Directory(f), apply.quiet)
-            }else if let Some(f) = apply.file {
-                command::apply::apply(&context, ApplyInputType::File(f), apply.quiet)
-            }else if apply.input{
-                command::apply::apply(&context, ApplyInputType::Input, apply.quiet)
-            }else{
-                eprintln!("Options --directory, --file and --input should have least one.")
-            }
+        Cli::Apply(apply) => if let Some(f) = apply.directory { 
+            command::apply::apply(&context, ApplyInputType::Directory(f), apply.quiet)
+        }else if let Some(f) = apply.file {
+            command::apply::apply(&context, ApplyInputType::File(f), apply.quiet)
+        }else if apply.input{
+            command::apply::apply(&context, ApplyInputType::Input, apply.quiet)
+        }else{
+            eprintln!("Options --directory, --file and --input should have least one.")
         }
         Cli::Import(import) => match import {
             Import::Add { files, remove } => command::import::add(&mut context, &files, remove).await,
-            Import::List => command::import::list(&mut context).await,
             Import::Batch { partition_time, create_time, order_time, analyse_source } => command::import::batch(&mut context, partition_time, create_time, order_time, analyse_source).await,
+            Import::List => command::import::list(&mut context).await,
             Import::Save => command::import::save(&mut context).await
         }
-        Cli::SourceData(_) => {
-
+        Cli::SourceData(source_data) => match source_data {
+            SourceData::Query { hql, limit, offset } => command::source_data::query(&mut context, hql.as_str(), offset, limit).await,
+            SourceData::Download => command::source_data::download(&mut context).await,
+            SourceData::Connect => command::source_data::connect(&mut context).await
         }
     }
 }

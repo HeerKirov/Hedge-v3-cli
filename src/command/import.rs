@@ -6,8 +6,8 @@ use super::Context;
 
 pub async fn list(context: &mut Context<'_>) {
     context.server_manager.waiting_for_start().await;
-    let mut import = ImportModule::new(context.server_manager);
-    let r = match import.list().await {
+    let mut import_module = ImportModule::new(context.server_manager);
+    let r = match import_module.list().await {
         Err(e) => {
             eprintln!("Error occrred in requesting. {}", e.to_string());
             return
@@ -26,9 +26,9 @@ pub async fn list(context: &mut Context<'_>) {
 pub async fn add(context: &mut Context<'_>, files: &Vec<PathBuf>, remove: bool) {
     if files.len() > 0 {
         context.server_manager.waiting_for_start().await;
-        let mut import = ImportModule::new(context.server_manager);
+        let mut import_module = ImportModule::new(context.server_manager);
         for file in files {
-            if let Err(e) = import.add(file, remove).await {
+            if let Err(e) = import_module.add(file, remove).await {
                 println!("{} add failed. {}", file.to_str().unwrap(), e.to_string());
             }else{
                 println!("{} added.", file.to_str().unwrap());
@@ -40,8 +40,8 @@ pub async fn add(context: &mut Context<'_>, files: &Vec<PathBuf>, remove: bool) 
 pub async fn batch(context: &mut Context<'_>, partition_time: Option<NaiveDate>, create_time: Option<OrderTimeType>, order_time: Option<OrderTimeType>, analyse_source: bool) {
     if partition_time.is_some() || create_time.is_some() || order_time.is_some() || analyse_source {
         context.server_manager.waiting_for_start().await;
-        let mut import = ImportModule::new(context.server_manager);
-        let r = match import.batch(partition_time, create_time, order_time, analyse_source).await {
+        let mut import_module = ImportModule::new(context.server_manager);
+        let r = match import_module.batch(partition_time, create_time, order_time, analyse_source).await {
             Err(e) => {
                 eprintln!("Error occrred in requesting. {}", e.to_string());
                 return
@@ -64,8 +64,8 @@ pub async fn batch(context: &mut Context<'_>, partition_time: Option<NaiveDate>,
 
 pub async fn save(context: &mut Context<'_>) {
     context.server_manager.waiting_for_start().await;
-    let mut import = ImportModule::new(context.server_manager);
-    let r = match import.save().await {
+    let mut import_module = ImportModule::new(context.server_manager);
+    let r = match import_module.save().await {
         Err(e) => {
             eprintln!("Error occrred in requesting. {}", e.to_string());
             return

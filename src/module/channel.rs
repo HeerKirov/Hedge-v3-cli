@@ -13,7 +13,7 @@ impl <'l> ChannelManager<'l> {
     pub fn new(config: &LocalConfig, local_data_manager: &'l LocalDataManager) -> ChannelManager<'l> {
         let channel = local_data_manager.read().using_channel.unwrap_or("default".to_string());
         ChannelManager {
-            channel_path: config.appdata_path.join("channel"),
+            channel_path: config.work_path.appdata_path.join("channel"),
             local_data_manager,
             channel
         }

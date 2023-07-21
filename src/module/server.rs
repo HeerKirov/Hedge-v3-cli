@@ -17,8 +17,8 @@ pub struct ServerManager {
 impl ServerManager {
     pub fn new(config: &LocalConfig, channel_manager: &ChannelManager) -> ServerManager {
         ServerManager { 
-            server_path: config.server_path.clone(),
-            appdata_path: config.appdata_path.clone(),
+            server_path: config.work_path.server_path.clone(),
+            appdata_path: config.work_path.appdata_path.clone(),
             channel: channel_manager.current_channel().to_string(),
             client: reqwest::Client::new(),
             address: Option::None,
@@ -48,8 +48,16 @@ impl ServerManager {
         }
     }
     pub async fn waiting_for_start(&mut self) -> bool {
-        self.start_server();
-        self.check_connection().await
+        let pid_file = self.read_pid_file();
+        if pid_file.is_none() {
+            self.start_server();
+        }
+        if self.check_connection().await {
+            self.single_signal(10000).await;
+            true
+        }else{
+            false
+        }
     }
     pub async fn permanent(&mut self, enable: bool) {
         let body = serde_json::json!({
@@ -61,6 +69,16 @@ impl ServerManager {
                 let _: Vec<String> = d;
             },
             Err(e) => panic!("Error occurred when set permanent. {}", e)
+        }
+    }
+    pub async fn single_signal(&mut self, interval: i64) {
+        let body = serde_json::json!({
+            "interval": interval,
+            "standalone": true
+        });
+        match self.req_without_res(Method::POST, "/app/lifetime/signal", body).await {
+            Ok(_) => {},
+            Err(e) => panic!("Error occurred when send signal. {}", e)
         }
     }
     fn start_server(&self) {
@@ -125,6 +143,19 @@ impl ServerManager {
             Err(e) => Result::Err(Box::new(e))
         }
     }
+    pub async fn req_with_query<U, T>(&mut self, method: Method, path: U, query: &Vec<(&str, String)>) -> Result<T, Box<dyn std::error::Error>> where U: IntoUrl, T: serde::de::DeserializeOwned {
+        let url = self.address.as_ref().map(|address| format!("{}{}", address, path.as_str())).unwrap_or_else(|| path.as_str().to_string());
+        let mut b = self.client.request(method, url).query(query);
+        if let Some(token) = &self.token {
+            b = b.header("Authorization", format!("Bearer {}", token));
+        }
+        let res = b.send().await?;
+        let text = res.text().await?;
+        match serde_json::from_str(&text) {
+            Ok(d) => Result::Ok(d),
+            Err(e) => Result::Err(Box::new(e))
+        }
+    }
     pub async fn req_with_body<U, T>(&mut self, method: Method, path: U, body: serde_json::Value) -> Result<T, Box<dyn std::error::Error>> where U: IntoUrl, T: serde::de::DeserializeOwned {
         let url = self.address.as_ref().map(|address| format!("{}{}", address, path.as_str())).unwrap_or_else(|| path.as_str().to_string());
         let body = serde_json::to_string(&body)?;
@@ -138,6 +169,16 @@ impl ServerManager {
             Ok(d) => Result::Ok(d),
             Err(e) => Result::Err(Box::new(e))
         }
+    }
+    pub async fn req_without_res<U>(&mut self, method: Method, path: U, body: serde_json::Value) -> Result<(), Box<dyn std::error::Error>> where U: IntoUrl {
+        let url = self.address.as_ref().map(|address| format!("{}{}", address, path.as_str())).unwrap_or_else(|| path.as_str().to_string());
+        let body = serde_json::to_string(&body)?;
+        let mut b = self.client.request(method, url).body(body);
+        if let Some(token) = &self.token {
+            b = b.header("Authorization", format!("Bearer {}", token));
+        }
+        b.send().await?;
+        Result::Ok(())
     }
     fn read_pid_file(&self) -> Option<PidFile> {
         let pid_file_path = self.appdata_path.join("channel").join(&self.channel).join("PID");
@@ -161,7 +202,7 @@ struct PidFile {
     pid: i64,
     port: Option<i32>,
     token: Option<String>,
-    #[serde(alias = "startTime")]
+    #[serde(rename = "startTime")]
     start_time: i64
 }
 

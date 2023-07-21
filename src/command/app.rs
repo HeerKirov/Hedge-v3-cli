@@ -2,12 +2,12 @@ use std::process::{Command, Stdio};
 use super::Context;
 
 pub fn start_app(context: &Context) {
-    if let Some(application_path) = &context.config.application_path {
+    if let Some(application_path) = &context.config.work_path.application_path {
         let channel = context.channel_manager.current_channel();
         let args = if context.config.debug_mode {
             vec!["--channel", channel]
         }else{
-            let userdata_path = context.config.userdata_path.to_str().unwrap();
+            let userdata_path = context.config.work_path.userdata_path.to_str().unwrap();
             vec!["--channel", channel, "--debug-mode", "--local-data-path", userdata_path]
         };
         

@@ -63,20 +63,20 @@ impl OrderTimeType {
 pub struct ImportImageRes {
     pub id: i32,
     pub file: String,
-    #[serde(alias = "thumbnailFile")]
+    #[serde(rename = "thumbnailFile")]
     pub thumbnail_file: Option<String>,
-    #[serde(alias = "fileName")]
+    #[serde(rename = "fileName")]
     pub file_name: Option<String>,
-    #[serde(alias = "sourceSite")]
+    #[serde(rename = "sourceSite")]
     pub source_site: Option<String>,
-    #[serde(alias = "sourceId")]
+    #[serde(rename = "sourceId")]
     pub source_id: Option<i64>,
-    #[serde(alias = "sourcePart")]
+    #[serde(rename = "sourcePart")]
     pub source_part: Option<i32>,
     pub tagme: Vec<String>,
-    #[serde(alias = "partitionTime")]
+    #[serde(rename = "partitionTime")]
     pub partition_time: String,
-    #[serde(alias = "orderTime")]
+    #[serde(rename = "orderTime")]
     pub order_time: String
 }
 
@@ -88,16 +88,16 @@ pub struct ImportSaveRes {
 
 #[derive(Deserialize)]
 pub struct ImportSaveErrorItem {
-    #[serde(alias = "importId")]
+    #[serde(rename = "importId")]
     pub import_id: i32,
-    #[serde(alias = "fileNotReady")]
+    #[serde(rename = "fileNotReady")]
     pub file_not_ready: bool,
-    #[serde(alias = "notExistedCollectionId")]
+    #[serde(rename = "notExistedCollectionId")]
     pub not_existed_collection_id: Option<i32>,
-    #[serde(alias = "notExistedCloneImageId")]
+    #[serde(rename = "notExistedCloneImageId")]
     pub not_existed_clone_image_id: Option<i32>,
-    #[serde(alias = "notExistedBookIds")]
+    #[serde(rename = "notExistedBookIds")]
     pub not_existed_book_ids: Option<Vec<i32>>,
-    #[serde(alias = "notExistedFolderIds")]
+    #[serde(rename = "notExistedFolderIds")]
     pub not_existed_folder_ids: Option<Vec<i32>>
 }

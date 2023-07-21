@@ -13,6 +13,6 @@ serde_json = { version = "1.0.100" }
 serde_yaml = { version = "0.9.22" }
 toml = { version = "0.7.5" }
 home = { version = "0.5.5" }
-reqwest = { version = "0.11.18" }
+reqwest = { version = "0.11.18", features = ["gzip"] }
 tokio = { version = "1.29.1", features = ["macros", "rt-multi-thread"] }
 async-std = { version = "1.12.0" }

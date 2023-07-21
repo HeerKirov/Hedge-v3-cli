@@ -17,7 +17,7 @@ pub struct LocalDataManager {
 impl LocalDataManager {
     pub fn new(config: &LocalConfig) -> LocalDataManager {
         LocalDataManager {
-            local_data_path: config.userdata_path.join("cli/context.toml")
+            local_data_path: config.work_path.userdata_path.join("cli/context.toml")
         }
     }
     pub fn read(&self) -> LocalData {

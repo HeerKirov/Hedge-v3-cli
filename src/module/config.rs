@@ -2,21 +2,23 @@ use std::{fs, env, path, io::ErrorKind};
 use serde::Deserialize;
 use home::home_dir;
 
-#[derive(Deserialize)]
-struct LocalConfigFile {
-    debug_mode: Option<bool>,
-    application_path: Option<String>,
-    server_path: Option<String>,
-    appdata_path: Option<String>,
-    userdata_path: Option<String>
-}
-
 pub struct LocalConfig {
     pub debug_mode: bool,
+    pub work_path: WorkPath,
+    pub download: Download
+}
+
+pub struct WorkPath {
     pub application_path: Option<path::PathBuf>,
     pub userdata_path: path::PathBuf,
     pub server_path: path::PathBuf,
     pub appdata_path: path::PathBuf
+}
+
+pub struct Download {
+    pub waiting_interval: Option<u64>,
+    pub timeout_interval: Option<u64>,
+    pub proxy: Option<String>
 }
 
 pub fn load_config() -> LocalConfig {
@@ -42,10 +44,17 @@ pub fn load_config() -> LocalConfig {
 
     LocalConfig {
         debug_mode: data.debug_mode.unwrap_or(false),
-        application_path: data.application_path.map(path::PathBuf::from),
-        userdata_path: data.userdata_path.as_ref().map(path::PathBuf::from).unwrap_or_else(|| userdata_path()),
-        server_path: data.server_path.as_ref().map(path::PathBuf::from).unwrap_or_else(|| data.userdata_path.as_ref().map(path::PathBuf::from).unwrap_or_else(|| userdata_path()).join("server")),
-        appdata_path: data.appdata_path.as_ref().map(path::PathBuf::from).unwrap_or_else(|| data.userdata_path.as_ref().map(path::PathBuf::from).unwrap_or_else(|| userdata_path()).join("appdata")),
+        work_path: WorkPath { 
+            application_path: data.work_path.application_path.map(path::PathBuf::from),
+            userdata_path: data.work_path.userdata_path.as_ref().map(path::PathBuf::from).unwrap_or_else(|| userdata_path()),
+            server_path: data.work_path.server_path.as_ref().map(path::PathBuf::from).unwrap_or_else(|| data.work_path.userdata_path.as_ref().map(path::PathBuf::from).unwrap_or_else(|| userdata_path()).join("server")),
+            appdata_path: data.work_path.appdata_path.as_ref().map(path::PathBuf::from).unwrap_or_else(|| data.work_path.userdata_path.as_ref().map(path::PathBuf::from).unwrap_or_else(|| userdata_path()).join("appdata")),
+        },
+        download: Download { 
+            waiting_interval: data.download.as_ref().map(|f| f.waiting_interval).unwrap_or(Option::None), 
+            timeout_interval: data.download.as_ref().map(|f| f.timeout_interval).unwrap_or(Option::None), 
+            proxy: data.download.as_ref().map(|f| f.proxy.clone()).unwrap_or(Option::None)
+        }
     }
 }
 
@@ -66,10 +75,35 @@ fn userdata_path() -> std::path::PathBuf {
 
 fn default_config_file() -> LocalConfigFile {
     LocalConfigFile { 
-        debug_mode: Option::None, 
-        application_path: Option::None, 
-        server_path: Option::None, 
-        appdata_path: Option::None, 
-        userdata_path: Option::None
+        debug_mode: Option::None,
+        work_path: LocalConfigFileWorkPath { 
+            application_path: Option::None, 
+            server_path: Option::None, 
+            appdata_path: Option::None, 
+            userdata_path: Option::None
+        },
+        download: Option::None
     }
+}
+
+#[derive(Deserialize)]
+struct LocalConfigFile {
+    debug_mode: Option<bool>,
+    work_path: LocalConfigFileWorkPath,
+    download: Option<LocalConfigFileDownload>
+}
+
+#[derive(Deserialize)]
+struct LocalConfigFileWorkPath {
+    application_path: Option<String>,
+    server_path: Option<String>,
+    appdata_path: Option<String>,
+    userdata_path: Option<String>
+}
+
+#[derive(Deserialize)]
+struct LocalConfigFileDownload {
+    waiting_interval: Option<u64>,
+    timeout_interval: Option<u64>,
+    proxy: Option<String>
 }
