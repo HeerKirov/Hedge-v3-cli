@@ -1,8 +1,8 @@
-use std::{error::Error, collections::HashMap};
+use std::error::Error;
 use reqwest::Method;
 use super::{Adapter, DownloadResult, DownloadAttachInfo, DownloadTag, DownloadBook};
 
-pub async fn download_for_sankakucomplex(adapter: &Adapter, id: i64, _additional_info: &HashMap<String, String>) -> Result<(DownloadResult, DownloadAttachInfo), Box<dyn Error>> {
+pub async fn download_for_sankakucomplex(adapter: &Adapter, id: i64) -> Result<(DownloadResult, DownloadAttachInfo), Box<dyn Error>> {
     let start_timestamp = chrono::Utc::now().timestamp_millis();
     let url = format!("https://capi-v2.sankakucomplex.com/posts?lang=en&page=1&limit=1&tags=id_range:{id}");
     let (res, retry_cnt) = adapter.try_req(Method::GET, url.as_str()).await?;

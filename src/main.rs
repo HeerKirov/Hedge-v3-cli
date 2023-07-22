@@ -1,6 +1,7 @@
 mod cli;
 mod command;
 mod module;
+mod utils;
 
 use clap::Parser;
 use cli::{Cli, Import, Channel, Server, SourceData};

@@ -1,5 +1,16 @@
 debug_mode = false
+
+[work_path]
 application_path = "/opt/hedge/hedge"
 server_path = "~/.config/Hedge-v3/server"
 appdata_path = "~/.config/Hedge-v3/appdata"
 userdata_path = "~/.config/Hedge-v3"
+
+[download]
+waiting_interval = 10
+timeout_interval = 20
+proxy = "http://127.0.0.1:1087"
+
+[[download.available_sites]]
+site = "sankakucomplex"
+rule = "sankakucomplex"

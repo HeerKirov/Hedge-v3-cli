@@ -2,25 +2,6 @@ use std::{fs, env, path, io::ErrorKind};
 use serde::Deserialize;
 use home::home_dir;
 
-pub struct LocalConfig {
-    pub debug_mode: bool,
-    pub work_path: WorkPath,
-    pub download: Download
-}
-
-pub struct WorkPath {
-    pub application_path: Option<path::PathBuf>,
-    pub userdata_path: path::PathBuf,
-    pub server_path: path::PathBuf,
-    pub appdata_path: path::PathBuf
-}
-
-pub struct Download {
-    pub waiting_interval: Option<u64>,
-    pub timeout_interval: Option<u64>,
-    pub proxy: Option<String>
-}
-
 pub fn load_config() -> LocalConfig {
     let local_config_path = match env::var_os("LOCAL_CONFIG_PATH") {
         Some(p) => p.to_str().unwrap().to_string(),
@@ -50,11 +31,17 @@ pub fn load_config() -> LocalConfig {
             server_path: data.work_path.server_path.as_ref().map(path::PathBuf::from).unwrap_or_else(|| data.work_path.userdata_path.as_ref().map(path::PathBuf::from).unwrap_or_else(|| userdata_path()).join("server")),
             appdata_path: data.work_path.appdata_path.as_ref().map(path::PathBuf::from).unwrap_or_else(|| data.work_path.userdata_path.as_ref().map(path::PathBuf::from).unwrap_or_else(|| userdata_path()).join("appdata")),
         },
-        download: Download { 
-            waiting_interval: data.download.as_ref().map(|f| f.waiting_interval).unwrap_or(Option::None), 
-            timeout_interval: data.download.as_ref().map(|f| f.timeout_interval).unwrap_or(Option::None), 
-            proxy: data.download.as_ref().map(|f| f.proxy.clone()).unwrap_or(Option::None)
-        }
+        download: data.download.as_ref().map(|download| Download { 
+            waiting_interval: download.waiting_interval, 
+            timeout_interval: download.timeout_interval,
+            proxy: download.proxy.clone(),
+            available_sites: download.available_sites.as_ref().map(|f| f[..].to_vec()).unwrap_or_else(|| Vec::new())
+        }).unwrap_or_else(|| Download { 
+            waiting_interval: Option::None, 
+            timeout_interval: Option::None, 
+            proxy: Option::None,
+            available_sites: Vec::new()
+        }) 
     }
 }
 
@@ -86,6 +73,32 @@ fn default_config_file() -> LocalConfigFile {
     }
 }
 
+pub struct LocalConfig {
+    pub debug_mode: bool,
+    pub work_path: WorkPath,
+    pub download: Download
+}
+
+pub struct WorkPath {
+    pub application_path: Option<path::PathBuf>,
+    pub userdata_path: path::PathBuf,
+    pub server_path: path::PathBuf,
+    pub appdata_path: path::PathBuf
+}
+
+pub struct Download {
+    pub waiting_interval: Option<u64>,
+    pub timeout_interval: Option<u64>,
+    pub proxy: Option<String>,
+    pub available_sites: Vec<AvailableSite>
+}
+
+#[derive(Deserialize, Clone)]
+pub struct AvailableSite {
+    pub site: String,
+    pub rule: String
+}
+
 #[derive(Deserialize)]
 struct LocalConfigFile {
     debug_mode: Option<bool>,
@@ -105,5 +118,6 @@ struct LocalConfigFileWorkPath {
 struct LocalConfigFileDownload {
     waiting_interval: Option<u64>,
     timeout_interval: Option<u64>,
-    proxy: Option<String>
+    proxy: Option<String>,
+    available_sites: Option<Vec<AvailableSite>>
 }

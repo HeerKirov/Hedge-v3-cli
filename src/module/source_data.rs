@@ -5,11 +5,11 @@ use super::server::{ServerManager, ListResult};
 
 
 pub struct SourceDataModule<'t> {
-    server_manager: &'t mut ServerManager
+    server_manager: &'t ServerManager
 }
 
 impl <'t> SourceDataModule<'t> {
-    pub fn new(server_manager: &'t mut ServerManager) -> SourceDataModule {
+    pub fn new(server_manager: &'t ServerManager) -> SourceDataModule {
         SourceDataModule { server_manager }        
     }
     pub async fn query(&mut self, hql: Option<&str>, status: Option<Vec<&str>>, site: Option<Vec<&str>>, offset: Option<u32>, limit: Option<u32>) -> Result<ListResult<SourceDataRes>, Box<dyn Error>> {

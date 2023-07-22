@@ -8,11 +8,11 @@ use super::server::{ServerManager, ListResult, IdWithWarning};
 
 
 pub struct ImportModule<'t> {
-    server_manager: &'t mut ServerManager
+    server_manager: &'t ServerManager
 }
 
 impl <'t> ImportModule <'t> {
-    pub fn new(server_manager: &mut ServerManager) -> ImportModule {
+    pub fn new(server_manager: &ServerManager) -> ImportModule {
         ImportModule { server_manager }
     }
     pub async fn list(&mut self) -> Result<ListResult<ImportImageRes>, Box<dyn Error>> {

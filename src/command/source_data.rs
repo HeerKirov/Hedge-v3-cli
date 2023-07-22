@@ -1,10 +1,15 @@
-use std::collections::HashMap;
+use std::time::Duration;
+
 use crate::module::{source_data::SourceDataModule, download::DownloadModule};
 use super::Context;
 
 
 pub async fn query(context: &mut Context<'_>, hql: &str, offset: u32, limit: u32) {
-    context.server_manager.waiting_for_start().await;
+    if let Err(e) = context.server_manager.waiting_for_start().await {
+        eprintln!("Cannot establish connection to server. {}", e);
+        return
+    }
+
     let mut source_data_module = SourceDataModule::new(context.server_manager);
     let r = match source_data_module.query(Option::Some(hql), Option::None, Option::None, Option::Some(offset), Option::Some(limit)).await {
         Err(e) => {
@@ -30,11 +35,19 @@ pub async fn query(context: &mut Context<'_>, hql: &str, offset: u32, limit: u32
 }
 
 pub async fn download(context: &mut Context<'_>) {
-    // TODO 需要一个持续发送signal的副线程，最好做成callback调用
-    context.server_manager.waiting_for_start().await;
+    let sites: Vec<&str> = context.config.download.available_sites.iter().map(|f| f.site.as_str()).collect();
+    if sites.len() <= 0 {
+        eprintln!("Available sites not configured.");
+        return
+    }
+
+    if let Err(e) = context.server_manager.maintaining_for_start().await {
+        eprintln!("Cannot establish connection to server. {}", e);
+        return
+    }
+
     let mut source_data_module = SourceDataModule::new(context.server_manager);
-    // TODO 最终的site参数可配置
-    let r = match source_data_module.query(Option::None, Option::Some(vec!["NOT_EDITED", "ERROR"]), Option::Some(vec!["sankakucomplex"]), Option::None, Option::Some(1000)).await {
+    let r = match source_data_module.query(Option::None, Option::Some(vec!["NOT_EDITED", "ERROR"]), Option::Some(sites), Option::None, Option::Some(1000)).await {
         Err(e) => {
             eprintln!("Error occrred in requesting. {}", e.to_string());
             return
@@ -57,9 +70,8 @@ pub async fn download(context: &mut Context<'_>) {
     let mut success = 0;
     let mut failed = 0;
     for item in &r.result {
-        //TODO 根据此种类的site是否需要附加数据的配置项，决定是否要get detail
-        let additional_info = HashMap::new();
-        let dn = download_module.download(&item.site, item.source_id, &additional_info).await;
+        //tips: 暂时没有需要additional info的实现。如果有实现，需要根据config的配置，决定哪些需要附加信息，然后对此site查询详情
+        let dn = download_module.download(&item.site, item.source_id, Option::None).await;
 
         let date = chrono::Local::now().format("%Y-%m-%d %H:%M:%S");
         print!("{} | {:>rc_len$}/{} \x1b[1;33m| {:16} | {:>12} |\x1b[0m", date, index, result_count, item.site, item.source_id, rc_len = result_count_str_len);
@@ -94,13 +106,17 @@ pub async fn download(context: &mut Context<'_>) {
         }
         index += 1;
     }
-
+    
     println!("---");
     println!("Processing complated. Success {} item(s), failed {} item(s).", success, failed);
 }
 
 pub async fn connect(context: &mut Context<'_>) {
-    context.server_manager.waiting_for_start().await;
+    if let Err(e) = context.server_manager.maintaining_for_start().await {
+        eprintln!("Cannot establish connection to server. {}", e);
+        return
+    }
     // let source_data_module = SourceDataModule::new(context.server_manager);
+    async_std::task::sleep(Duration::from_secs(120)).await;
     println!("TO BE IMPLEMENTED");
 }

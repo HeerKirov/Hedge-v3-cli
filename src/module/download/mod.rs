@@ -3,12 +3,15 @@ mod sankakucomplex;
 use std::{time::Duration, error::Error, collections::HashMap};
 use reqwest::{Method, IntoUrl, RequestBuilder, Proxy, Response};
 use serde::Serialize;
+use crate::utils::error::ApplicationError;
+
 use super::{config::LocalConfig, source_data::{SourceDataUpdateForm, SourceTagForm, SourceBookForm}};
 use sankakucomplex::download_for_sankakucomplex;
 
 
 pub struct DownloadModule {
-    adapter: Adapter
+    adapter: Adapter,
+    available_sites: HashMap<String, String>
 }
 
 impl DownloadModule {
@@ -22,15 +25,25 @@ impl DownloadModule {
             timeout: config.download.timeout_interval.unwrap_or(20),
             waiting: config.download.waiting_interval.unwrap_or(8)
         };
+        let mut available_sites: HashMap<String, String> = HashMap::new();
+        for ele in &config.download.available_sites {
+            available_sites.insert(ele.site.clone(), ele.rule.clone());
+        }
+        
         DownloadModule { 
-            adapter
+            adapter,
+            available_sites
         }
     }
-    pub async fn download(&self, site: &str, source_id: i64, additional_info: &HashMap<String, String>) -> Result<(DownloadResult, DownloadAttachInfo), Box<dyn Error>> {
-        if site == "sankakucomplex" {
-            download_for_sankakucomplex(&self.adapter, source_id, additional_info).await
+    pub async fn download(&self, site: &str, source_id: i64, _additional_info: Option<&HashMap<String, String>>) -> Result<(DownloadResult, DownloadAttachInfo), Box<dyn Error>> {
+        if let Some(rule) = self.available_sites.get(site) {
+            if rule == "sankakucomplex" {
+                download_for_sankakucomplex(&self.adapter, source_id).await
+            }else{
+                Result::Err(Box::new(ApplicationError::new(&format!("Unsupported rule type {}.", rule))))
+            }
         }else{
-            panic!("unsupported site {}.", site)
+            Result::Err(Box::new(ApplicationError::new(&format!("Site {} not configured in available sites.", site))))
         }
     }
     pub async fn wait(&self, time_cost: i64) {

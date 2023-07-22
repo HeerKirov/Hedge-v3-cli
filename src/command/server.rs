@@ -28,9 +28,8 @@ pub async fn status(context: &mut Context<'_>) {
 pub async fn start(context: &mut Context<'_>) {
     if context.server_manager.status().await.status == ServerStatusType::Stop {
         println!("Starting...");
-        let ok = context.server_manager.waiting_for_start().await;
-        if !ok {
-            eprintln!("Cannot establish connection to server. Connection timed out.");
+        if let Err(e) = context.server_manager.waiting_for_start().await {
+            eprintln!("Cannot establish connection to server. {}", e);
             return
         }
     }

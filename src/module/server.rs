@@ -1,7 +1,9 @@
-use std::{path::PathBuf, fs::{self, File}, fmt, process::{Command, Stdio}, time::Duration};
+use std::{path::PathBuf, fs::{self, File}, fmt, process::{Command, Stdio}, time::Duration, error::Error, sync::Arc};
 use reqwest::{Method, IntoUrl};
 use serde::{Deserialize, Serialize};
 use serde_json;
+
+use crate::utils::error::ApplicationError;
 
 use super::{config::LocalConfig, channel::ChannelManager};
 
@@ -9,7 +11,12 @@ pub struct ServerManager {
     server_path: PathBuf,
     appdata_path: PathBuf,
     channel: String,
-    client: reqwest::Client,
+    client: Arc<reqwest::Client>,
+    access: Access
+}
+
+#[derive(Clone)]
+struct Access {
     address: Option<String>,
     token: Option<String>
 }
@@ -20,9 +27,8 @@ impl ServerManager {
             server_path: config.work_path.server_path.clone(),
             appdata_path: config.work_path.appdata_path.clone(),
             channel: channel_manager.current_channel().to_string(),
-            client: reqwest::Client::new(),
-            address: Option::None,
-            token: Option::None
+            client: Arc::new(reqwest::Client::new()),
+            access: Access { address: Option::None, token: Option::None }
         }
     }
     pub async fn status(&mut self) -> ServerStatus {
@@ -47,19 +53,43 @@ impl ServerManager {
             }
         }
     }
-    pub async fn waiting_for_start(&mut self) -> bool {
+    pub async fn waiting_for_start(&mut self) -> Result<(), Box<dyn Error>> {
         let pid_file = self.read_pid_file();
         if pid_file.is_none() {
             self.start_server();
         }
         if self.check_connection().await {
-            self.single_signal(10000).await;
-            true
+            self.single_signal(10000).await?;
+            Result::Ok(())
         }else{
-            false
+            Result::Err(Box::new(ApplicationError::new("Check connection failed: timed out.")))
         }
     }
-    pub async fn permanent(&mut self, enable: bool) {
+    pub async fn maintaining_for_start(&mut self) -> Result<(), Box<dyn Error>> {
+        let pid_file = self.read_pid_file();
+        if pid_file.is_none() {
+            self.start_server();
+        }
+        if self.check_connection().await {
+            self.single_signal(30000).await?;
+
+            let maintain = MaintainComponent { client: Arc::clone(&self.client), access: self.access.clone() };
+            
+            tokio::spawn(async move {
+                loop {
+                    async_std::task::sleep(Duration::from_millis(25000)).await;
+                    if let Err(e) = maintain.single_signal(30000).await {
+                        eprintln!("Maintaining component cannot send single signal: {}", e);
+                    }
+                }
+            });
+
+            Result::Ok(())
+        }else{
+            Result::Err(Box::new(ApplicationError::new("Check connection failed: timed out.")))
+        }
+    }
+    pub async fn permanent(&self, enable: bool) {
         let body = serde_json::json!({
             "type": "command-line-application",
             "value": enable
@@ -71,14 +101,14 @@ impl ServerManager {
             Err(e) => panic!("Error occurred when set permanent. {}", e)
         }
     }
-    pub async fn single_signal(&mut self, interval: i64) {
+    async fn single_signal(&self, interval: i64) -> Result<(), Box<dyn Error>> {
         let body = serde_json::json!({
             "interval": interval,
             "standalone": true
         });
         match self.req_without_res(Method::POST, "/app/lifetime/signal", body).await {
-            Ok(_) => {},
-            Err(e) => panic!("Error occurred when send signal. {}", e)
+            Ok(_) => Result::Ok(()),
+            Err(e) => Result::Err(e)
         }
     }
     fn start_server(&self) {
@@ -127,13 +157,13 @@ impl ServerManager {
         false
     }
     fn set_access(&mut self, port: i32, token: String) {
-        self.address = Option::Some(format!("http://{}:{}", "localhost", port));
-        self.token = Option::Some(token);
+        self.access.address = Option::Some(format!("http://{}:{}", "localhost", port));
+        self.access.token = Option::Some(token);
     }
-    pub async fn req<U, T>(&mut self, method: Method, path: U) -> Result<T, Box<dyn std::error::Error>> where U: IntoUrl, T: serde::de::DeserializeOwned {
-        let url = self.address.as_ref().map(|address| format!("{}{}", address, path.as_str())).unwrap_or_else(|| path.as_str().to_string());
+    pub async fn req<U, T>(&self, method: Method, path: U) -> Result<T, Box<dyn std::error::Error>> where U: IntoUrl, T: serde::de::DeserializeOwned {
+        let url = self.access.address.as_ref().map(|address| format!("{}{}", address, path.as_str())).unwrap_or_else(|| path.as_str().to_string());
         let mut b = self.client.request(method, url);
-        if let Some(token) = &self.token {
+        if let Some(token) = &self.access.token {
             b = b.header("Authorization", format!("Bearer {}", token));
         }
         let res = b.send().await?;
@@ -143,10 +173,10 @@ impl ServerManager {
             Err(e) => Result::Err(Box::new(e))
         }
     }
-    pub async fn req_with_query<U, T>(&mut self, method: Method, path: U, query: &Vec<(&str, String)>) -> Result<T, Box<dyn std::error::Error>> where U: IntoUrl, T: serde::de::DeserializeOwned {
-        let url = self.address.as_ref().map(|address| format!("{}{}", address, path.as_str())).unwrap_or_else(|| path.as_str().to_string());
+    pub async fn req_with_query<U, T>(&self, method: Method, path: U, query: &Vec<(&str, String)>) -> Result<T, Box<dyn std::error::Error>> where U: IntoUrl, T: serde::de::DeserializeOwned {
+        let url = self.access.address.as_ref().map(|address| format!("{}{}", address, path.as_str())).unwrap_or_else(|| path.as_str().to_string());
         let mut b = self.client.request(method, url).query(query);
-        if let Some(token) = &self.token {
+        if let Some(token) = &self.access.token {
             b = b.header("Authorization", format!("Bearer {}", token));
         }
         let res = b.send().await?;
@@ -156,11 +186,11 @@ impl ServerManager {
             Err(e) => Result::Err(Box::new(e))
         }
     }
-    pub async fn req_with_body<U, T>(&mut self, method: Method, path: U, body: serde_json::Value) -> Result<T, Box<dyn std::error::Error>> where U: IntoUrl, T: serde::de::DeserializeOwned {
-        let url = self.address.as_ref().map(|address| format!("{}{}", address, path.as_str())).unwrap_or_else(|| path.as_str().to_string());
+    pub async fn req_with_body<U, T>(&self, method: Method, path: U, body: serde_json::Value) -> Result<T, Box<dyn std::error::Error>> where U: IntoUrl, T: serde::de::DeserializeOwned {
+        let url = self.access.address.as_ref().map(|address| format!("{}{}", address, path.as_str())).unwrap_or_else(|| path.as_str().to_string());
         let body = serde_json::to_string(&body)?;
         let mut b = self.client.request(method, url).body(body);
-        if let Some(token) = &self.token {
+        if let Some(token) = &self.access.token {
             b = b.header("Authorization", format!("Bearer {}", token));
         }
         let res = b.send().await?;
@@ -170,11 +200,11 @@ impl ServerManager {
             Err(e) => Result::Err(Box::new(e))
         }
     }
-    pub async fn req_without_res<U>(&mut self, method: Method, path: U, body: serde_json::Value) -> Result<(), Box<dyn std::error::Error>> where U: IntoUrl {
-        let url = self.address.as_ref().map(|address| format!("{}{}", address, path.as_str())).unwrap_or_else(|| path.as_str().to_string());
+    pub async fn req_without_res<U>(&self, method: Method, path: U, body: serde_json::Value) -> Result<(), Box<dyn std::error::Error>> where U: IntoUrl {
+        let url = self.access.address.as_ref().map(|address| format!("{}{}", address, path.as_str())).unwrap_or_else(|| path.as_str().to_string());
         let body = serde_json::to_string(&body)?;
         let mut b = self.client.request(method, url).body(body);
-        if let Some(token) = &self.token {
+        if let Some(token) = &self.access.token {
             b = b.header("Authorization", format!("Bearer {}", token));
         }
         b.send().await?;
@@ -193,6 +223,34 @@ impl ServerManager {
                 Ok(d) => Option::Some(d)
             }
         }
+    }
+}
+
+struct MaintainComponent {
+    client: Arc<reqwest::Client>,
+    access: Access
+}
+
+impl MaintainComponent {
+    async fn single_signal(&self, interval: i64) -> Result<(), Box<dyn Error>> {
+        let body = serde_json::json!({
+            "interval": interval,
+            "standalone": true
+        });
+        match self.req_without_res(Method::POST, "/app/lifetime/signal", body).await {
+            Ok(_) => Result::Ok(()),
+            Err(e) => Result::Err(e)
+        }
+    }
+    pub async fn req_without_res<U>(&self, method: Method, path: U, body: serde_json::Value) -> Result<(), Box<dyn std::error::Error>> where U: IntoUrl {
+        let url = self.access.address.as_ref().map(|address| format!("{}{}", address, path.as_str())).unwrap_or_else(|| path.as_str().to_string());
+        let body = serde_json::to_string(&body)?;
+        let mut b = self.client.request(method, url).body(body);
+        if let Some(token) = &self.access.token {
+            b = b.header("Authorization", format!("Bearer {}", token));
+        }
+        b.send().await?;
+        Result::Ok(())
     }
 }
 
