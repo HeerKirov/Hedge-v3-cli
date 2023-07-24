@@ -23,13 +23,13 @@ pub enum Cli {
 #[derive(Args)]
 pub struct Apply {
     #[arg(short, long, help = "read from files in directory")]
-    pub directory: Option<PathBuf>,
+    pub directory: Option<Vec<PathBuf>>,
     #[arg(short, long, help = "read from file")]
-    pub file: Option<PathBuf>,
+    pub file: Option<Vec<PathBuf>>,
     #[arg(short, long, help = "read from stdin")]
     pub input: bool,
-    #[arg(short, long, help = "don't print any output")]
-    pub quiet: bool,
+    #[arg(short, long, help = "print verbose output")]
+    pub verbose: bool,
 }
 
 #[derive(Subcommand)]

@@ -34,14 +34,26 @@ async fn main() {
             Server::Start => command::server::start(&mut context).await,
             Server::Stop => command::server::stop(&mut context).await
         }
-        Cli::Apply(apply) => if let Some(f) = apply.directory { 
-            command::apply::apply(&context, ApplyInputType::Directory(f), apply.quiet)
-        }else if let Some(f) = apply.file {
-            command::apply::apply(&context, ApplyInputType::File(f), apply.quiet)
-        }else if apply.input{
-            command::apply::apply(&context, ApplyInputType::Input, apply.quiet)
-        }else{
-            eprintln!("Options --directory, --file and --input should have least one.")
+        Cli::Apply(apply) => {
+            let mut input: Vec<ApplyInputType> = Vec::new();
+            if let Some(f) = apply.directory {
+                for ele in f {
+                    input.push(ApplyInputType::Directory(ele));
+                }
+            }
+            if let Some(f) = apply.file {
+                for ele in f {
+                    input.push(ApplyInputType::File(ele));
+                }
+            }
+            if apply.input {
+                input.push(ApplyInputType::Input);
+            }
+            if input.is_empty() {
+                eprintln!("Options --directory, --file and --input should have least one.")
+            }else{
+                command::apply::apply(&mut context, &input, apply.verbose).await
+            }
         }
         Cli::Import(import) => match import {
             Import::Add { files, remove } => command::import::add(&mut context, &files, remove).await,
