@@ -167,10 +167,13 @@ impl ServerManager {
             b = b.header("Authorization", format!("Bearer {}", token));
         }
         let res = b.send().await?;
-        let text = res.text().await?;
-        match serde_json::from_str(&text) {
-            Ok(d) => Result::Ok(d),
-            Err(e) => Result::Err(Box::new(e))
+        if res.status().is_success() || res.status().is_redirection() {
+            let text = res.text().await?;
+            Result::Ok(serde_json::from_str(&text)?)
+        }else{
+            let text = res.text().await?;
+            let err: ErrorResult = serde_json::from_str(&text)?;
+            Result::Err(Box::new(ApplicationError::new(&err.message)))
         }
     }
     pub async fn req_with_query<U, T>(&self, method: Method, path: U, query: &Vec<(&str, String)>) -> Result<T, Box<dyn std::error::Error>> where U: IntoUrl, T: serde::de::DeserializeOwned {
@@ -180,10 +183,13 @@ impl ServerManager {
             b = b.header("Authorization", format!("Bearer {}", token));
         }
         let res = b.send().await?;
-        let text = res.text().await?;
-        match serde_json::from_str(&text) {
-            Ok(d) => Result::Ok(d),
-            Err(e) => Result::Err(Box::new(e))
+        if res.status().is_success() || res.status().is_redirection() {
+            let text = res.text().await?;
+            Result::Ok(serde_json::from_str(&text)?)
+        }else{
+            let text = res.text().await?;
+            let err: ErrorResult = serde_json::from_str(&text)?;
+            Result::Err(Box::new(ApplicationError::new(&err.message)))
         }
     }
     pub async fn req_with_body<U, T>(&self, method: Method, path: U, body: serde_json::Value) -> Result<T, Box<dyn std::error::Error>> where U: IntoUrl, T: serde::de::DeserializeOwned {
@@ -194,10 +200,13 @@ impl ServerManager {
             b = b.header("Authorization", format!("Bearer {}", token));
         }
         let res = b.send().await?;
-        let text = res.text().await?;
-        match serde_json::from_str(&text) {
-            Ok(d) => Result::Ok(d),
-            Err(e) => Result::Err(Box::new(e))
+        if res.status().is_success() || res.status().is_redirection() {
+            let text = res.text().await?;
+            Result::Ok(serde_json::from_str(&text)?)
+        }else{
+            let text = res.text().await?;
+            let err: ErrorResult = serde_json::from_str(&text)?;
+            Result::Err(Box::new(ApplicationError::new(&err.message)))
         }
     }
     pub async fn req_without_res<U>(&self, method: Method, path: U, body: serde_json::Value) -> Result<(), Box<dyn std::error::Error>> where U: IntoUrl {
@@ -207,8 +216,14 @@ impl ServerManager {
         if let Some(token) = &self.access.token {
             b = b.header("Authorization", format!("Bearer {}", token));
         }
-        b.send().await?;
-        Result::Ok(())
+        let res = b.send().await?;
+        if res.status().is_success() || res.status().is_redirection() {
+            Result::Ok(())
+        }else{
+            let text = res.text().await?;
+            let err: ErrorResult = serde_json::from_str(&text)?;
+            Result::Err(Box::new(ApplicationError::new(&err.message)))
+        }
     }
     fn read_pid_file(&self) -> Option<PidFile> {
         let pid_file_path = self.appdata_path.join("channel").join(&self.channel).join("PID");

@@ -1,7 +1,7 @@
 use std::error::Error;
 use reqwest::Method;
 use serde::{Serialize, Deserialize};
-use super::server::{ServerManager, ErrorResult};
+use super::super::server::{ServerManager, ErrorResult};
 
 
 pub struct BulkModule<'t> {
@@ -52,6 +52,7 @@ pub struct SourceDataIdentity {
 }
 
 #[derive(Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct TagBulkForm {
     pub name: String,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -75,6 +76,7 @@ pub struct TagBulkForm {
 }
 
 #[derive(Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct TopicBulkForm {
     pub name: String,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -100,6 +102,7 @@ pub struct TopicBulkForm {
 }
 
 #[derive(Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct AuthorBulkForm {
     pub name: String,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -123,6 +126,7 @@ pub struct AuthorBulkForm {
 }
 
 #[derive(Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct SourceDataBulkForm {
     #[serde(rename = "sourceSite", alias = "source_site", alias = "site")]
     pub source_site: String,
@@ -147,6 +151,7 @@ pub struct SourceDataBulkForm {
 }
 
 #[derive(Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct SourceTagForm {
     pub code: String,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -158,6 +163,7 @@ pub struct SourceTagForm {
 }
 
 #[derive(Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct SourceBookForm {
     pub code: String,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -167,12 +173,14 @@ pub struct SourceBookForm {
 }
 
 #[derive(Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct AdditionalInfoForm {
     pub field: String,
     pub value: String
 }
 
 #[derive(Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct MappingSourceTagForm {
     pub site: String,
     pub code: String,

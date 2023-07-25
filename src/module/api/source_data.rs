@@ -1,7 +1,7 @@
 use std::error::Error;
 use reqwest::Method;
 use serde::{Serialize, Deserialize};
-use super::server::{ServerManager, ListResult};
+use super::super::server::{ServerManager, ListResult};
 
 
 pub struct SourceDataModule<'t> {
