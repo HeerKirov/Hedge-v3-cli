@@ -64,7 +64,7 @@ async fn main() {
         Cli::SourceData(source_data) => match source_data {
             SourceData::Query { hql, limit, offset } => command::source_data::query(&mut context, hql.as_str(), offset, limit).await,
             SourceData::Download => command::source_data::download(&mut context).await,
-            SourceData::Connect => command::source_data::connect(&mut context).await
+            SourceData::Connect { split, limit, update, verbose } => command::source_data::connect(&mut context, &split, limit, update, verbose).await
         }
     }
 }

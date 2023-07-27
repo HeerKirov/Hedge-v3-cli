@@ -71,7 +71,7 @@ pub async fn download_for_sankakucomplex(adapter: &Adapter, id: i64) -> Result<(
     };
 
     let end_timestamp = chrono::Utc::now().timestamp_millis();
-    let ret = DownloadResult { tags, books, relations, title: Option::None, description: Option::None };
+    let ret = DownloadResult { tags, books, relations, title: Option::None, description: Option::None, additional_info: Option::None };
     let info = DownloadAttachInfo { retry_count: retry_sum_cnt, time_cost: end_timestamp - start_timestamp };
 
     Result::Ok((ret, info))

@@ -93,6 +93,15 @@ pub enum SourceData {
     #[command(about = "Download metadata for NOT_EDITED source data")]
     Download,
     #[command(about = "Connect database to read metadata for NOT_EDITED source data")]
-    Connect
+    Connect {
+        #[arg(long, short, help = "query condition to split result")]
+        split: Vec<String>,
+        #[arg(long, help = "query limit")]
+        limit: Option<u32>,
+        #[arg(short, long, help = "allow to update exist item", default_value_t = false)]
+        update: bool,
+        #[arg(short, long, help = "print verbose output")]
+        verbose: bool,
+    }
 }
 

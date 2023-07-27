@@ -1,6 +1,4 @@
-use std::time::Duration;
-
-use crate::module::{api::source_data::SourceDataModule, download::DownloadModule};
+use crate::{module::{api::source_data::SourceDataModule, download::DownloadModule, connect::ConnectModule}, utils::error::ApiResultError};
 use super::Context;
 
 
@@ -108,15 +106,88 @@ pub async fn download(context: &mut Context<'_>) {
     }
     
     println!("---");
-    println!("Processing complated. Success {} item(s), failed {} item(s).", success, failed);
+    println!("Processing completed. Success {} item(s), failed {} item(s).", success, failed);
 }
 
-pub async fn connect(context: &mut Context<'_>) {
+pub async fn connect(context: &mut Context<'_>, split: &Vec<String>, limit: Option<u32>, update: bool, verbose: bool) {
+    if split.len() <= 0 { 
+        eprintln!("Must specify at least one split.");
+        return
+    }
     if let Err(e) = context.server_manager.maintaining_for_start().await {
         eprintln!("Cannot establish connection to server. {}", e);
         return
     }
-    // let source_data_module = SourceDataModule::new(context.server_manager);
-    async_std::task::sleep(Duration::from_secs(120)).await;
-    println!("TO BE IMPLEMENTED");
+    let mut source_data_module = SourceDataModule::new(&context.server_manager);
+    let connect_module = ConnectModule::new(&context.config);
+    
+    let mut conn = match connect_module.connect() {
+        Ok(c) => c,
+        Err(e) => {
+            eprintln!("Error occrred in connecting. {}", e.to_string());
+            return
+        }
+    };
+    let mut stat = match conn.statement(split, limit) {
+        Ok(s) => s,
+        Err(e) => {
+            eprintln!("Error occrred in statement preparing. {}", e.to_string());
+            return
+        }
+    };
+
+    let mut index = 0;
+    let mut success = 0;
+    while let Some((identity, result)) = stat.next() {
+        if verbose {
+            let date = chrono::Local::now().format("%Y-%m-%d %H:%M:%S");
+            if let Some((site, id, _)) = &identity {
+                print!("{} | {:>4} \x1b[1;33m| {:16} | {:>12} |\x1b[0m", date, index + 1, site, id);
+            }else{
+                print!("{} | {:>4} \x1b[1;33m|\x1b[0m", date, index + 1);
+            }
+            match &result {
+                Ok(result) => {
+                    let (site, id, _) = &identity.unwrap();
+                    let form = result.to_update_form();
+                    match source_data_module.create(site, *id, &form).await {
+                        Ok(_) => {
+                            println!("\x1b[1;32m Created. {}\x1b[0m", result.info());
+                            success += 1;
+                        },
+                        Err(e) => if let Some(e) = e.downcast_ref::<ApiResultError>() {
+                            if e.code == "ALREADY_EXISTS" {
+                                if update {
+                                    match source_data_module.update(site, *id, &form).await {
+                                        Ok(_) => {
+                                            println!("\x1b[1;32m Updated. {}\x1b[0m", result.info());
+                                            success += 1;
+                                        },
+                                        Err(e) => if let Some(e) = e.downcast_ref::<ApiResultError>() {
+                                            println!("\x1b[1;31m Failed. {}\x1b[0m", e)
+                                        }else{
+                                            println!("\x1b[1;31m Failed. Request error: {}\x1b[0m", e)
+                                        }
+                                    }
+                                }else{
+                                    println!("\x1b[1;33m Already exists, skip it.\x1b[0m");
+                                    success += 1;
+                                }
+                            }else{
+                                println!("\x1b[1;31m Failed. {}\x1b[0m", e)
+                            }
+                        }else{
+                            println!("\x1b[1;31m Failed. Request error: {}\x1b[0m", e)
+                        }
+                    }
+                },
+                Err(e) => println!("\x1b[1;31m Failed. Record parse error: {}\x1b[0m", e)
+            }
+        }
+
+        index += 1;
+    }
+
+    if verbose { println!("---") }
+    println!("Processing completed. Success {} item(s), failed {} item(s).", success, index - success);
 }

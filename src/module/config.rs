@@ -1,4 +1,4 @@
-use std::{fs, env, path, io::ErrorKind};
+use std::{fs, env, path, io::ErrorKind, collections::HashMap};
 use serde::Deserialize;
 use home::home_dir;
 
@@ -41,7 +41,13 @@ pub fn load_config() -> LocalConfig {
             timeout_interval: Option::None, 
             proxy: Option::None,
             available_sites: Vec::new()
-        }) 
+        }),
+        connect: data.connect.map(|c| Connect { 
+            driver: c.driver, 
+            url: c.url, 
+            query: c.query, 
+            parser: c.parser
+        })
     }
 }
 
@@ -69,14 +75,16 @@ fn default_config_file() -> LocalConfigFile {
             appdata_path: Option::None, 
             userdata_path: Option::None
         },
-        download: Option::None
+        download: Option::None,
+        connect: Option::None
     }
 }
 
 pub struct LocalConfig {
     pub debug_mode: bool,
     pub work_path: WorkPath,
-    pub download: Download
+    pub download: Download,
+    pub connect: Option<Connect>
 }
 
 pub struct WorkPath {
@@ -93,6 +101,13 @@ pub struct Download {
     pub available_sites: Vec<AvailableSite>
 }
 
+pub struct Connect {
+    pub driver: String,
+    pub url: String,
+    pub query: String,
+    pub parser: HashMap<String, ConnectParser>
+}
+
 #[derive(Deserialize, Clone)]
 pub struct AvailableSite {
     pub site: String,
@@ -103,7 +118,8 @@ pub struct AvailableSite {
 struct LocalConfigFile {
     debug_mode: Option<bool>,
     work_path: LocalConfigFileWorkPath,
-    download: Option<LocalConfigFileDownload>
+    download: Option<LocalConfigFileDownload>,
+    connect: Option<LocalConfigDbConnect>
 }
 
 #[derive(Deserialize)]
@@ -120,4 +136,47 @@ struct LocalConfigFileDownload {
     timeout_interval: Option<u64>,
     proxy: Option<String>,
     available_sites: Option<Vec<AvailableSite>>
+}
+
+#[derive(Deserialize)]
+struct LocalConfigDbConnect {
+    driver: String,
+    url: String,
+    query: String,
+    parser: HashMap<String, ConnectParser>
+}
+
+#[derive(Deserialize, Clone)]
+pub struct ConnectParser {
+    pub site: String,
+    pub title: Option<String>,
+    pub description: Option<String>,
+    pub tag: Option<ConnectParserTag>,
+    pub book: Option<ConnectParserBook>,
+    pub relation: Option<ConnectParserRelation>,
+    pub additional_info: Option<HashMap<String, String>>,
+    pub translate_underscore_to_space: Option<Vec<String>>
+}
+
+#[derive(Deserialize, Clone)]
+pub struct ConnectParserTag {
+    pub selector: String,
+    pub code: String,
+    pub name: Option<String>,
+    pub other_name: Option<String>,
+    #[serde(rename = "type")]
+    pub tag_type: Option<String>,
+}
+
+#[derive(Deserialize, Clone)]
+pub struct ConnectParserBook {
+    pub selector: String,
+    pub code: String,
+    pub title: Option<String>,
+    pub other_title: Option<String>
+}
+
+#[derive(Deserialize, Clone)]
+pub struct ConnectParserRelation {
+    pub selector: Vec<String>
 }

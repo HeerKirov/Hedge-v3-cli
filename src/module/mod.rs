@@ -5,3 +5,4 @@ pub mod server;
 pub mod import;
 pub mod api;
 pub mod download;
+pub mod connect;

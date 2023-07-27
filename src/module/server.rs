@@ -3,7 +3,7 @@ use reqwest::{Method, IntoUrl};
 use serde::{Deserialize, Serialize};
 use serde_json;
 
-use crate::utils::error::ApplicationError;
+use crate::utils::error::{ApplicationError, ApiResultError};
 
 use super::{config::LocalConfig, channel::ChannelManager};
 
@@ -173,7 +173,7 @@ impl ServerManager {
         }else{
             let text = res.text().await?;
             let err: ErrorResult = serde_json::from_str(&text)?;
-            Result::Err(Box::new(ApplicationError::new(&err.message)))
+            Result::Err(Box::new(ApiResultError::new(&err.code, &err.message)))
         }
     }
     pub async fn req_with_query<U, T>(&self, method: Method, path: U, query: &Vec<(&str, String)>) -> Result<T, Box<dyn std::error::Error>> where U: IntoUrl, T: serde::de::DeserializeOwned {
@@ -189,7 +189,7 @@ impl ServerManager {
         }else{
             let text = res.text().await?;
             let err: ErrorResult = serde_json::from_str(&text)?;
-            Result::Err(Box::new(ApplicationError::new(&err.message)))
+            Result::Err(Box::new(ApiResultError::new(&err.code, &err.message)))
         }
     }
     pub async fn req_with_body<U, T>(&self, method: Method, path: U, body: serde_json::Value) -> Result<T, Box<dyn std::error::Error>> where U: IntoUrl, T: serde::de::DeserializeOwned {
@@ -206,7 +206,7 @@ impl ServerManager {
         }else{
             let text = res.text().await?;
             let err: ErrorResult = serde_json::from_str(&text)?;
-            Result::Err(Box::new(ApplicationError::new(&err.message)))
+            Result::Err(Box::new(ApiResultError::new(&err.code, &err.message)))
         }
     }
     pub async fn req_without_res<U>(&self, method: Method, path: U, body: serde_json::Value) -> Result<(), Box<dyn std::error::Error>> where U: IntoUrl {
@@ -222,7 +222,7 @@ impl ServerManager {
         }else{
             let text = res.text().await?;
             let err: ErrorResult = serde_json::from_str(&text)?;
-            Result::Err(Box::new(ApplicationError::new(&err.message)))
+            Result::Err(Box::new(ApiResultError::new(&err.code, &err.message)))
         }
     }
     fn read_pid_file(&self) -> Option<PidFile> {

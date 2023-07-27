@@ -4,8 +4,7 @@ use std::{time::Duration, error::Error, collections::HashMap};
 use reqwest::{Method, IntoUrl, RequestBuilder, Proxy, Response};
 use serde::Serialize;
 use crate::utils::error::ApplicationError;
-
-use super::{config::LocalConfig, api::source_data::{SourceDataUpdateForm, SourceTagForm, SourceBookForm}};
+use super::{config::LocalConfig, api::source_data::{SourceDataUpdateForm, SourceTagForm, SourceBookForm, AdditionalInfoForm}};
 use sankakucomplex::download_for_sankakucomplex;
 
 
@@ -95,7 +94,7 @@ pub struct DownloadAttachInfo {
     pub time_cost: i64
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Debug)]
 pub struct DownloadResult {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub title: Option<String>,
@@ -106,10 +105,12 @@ pub struct DownloadResult {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub books: Option<Vec<DownloadBook>>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub relations: Option<Vec<i64>>
+    pub relations: Option<Vec<i64>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub additional_info: Option<HashMap<String, String>>
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Debug)]
 pub struct DownloadTag {
     pub code: String,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -120,7 +121,7 @@ pub struct DownloadTag {
     pub tag_type: Option<String>
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Debug)]
 pub struct DownloadBook {
     pub code: String,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -139,7 +140,18 @@ impl DownloadResult {
             relations: self.relations.clone(),
             status: Option::None,
             links: Option::None,
-            additional_info: Option::None
+            additional_info: self.additional_info.as_ref().map(|info| info.iter().map(|(k, v)| AdditionalInfoForm { field: k.clone(), value: v.clone() }).collect())
         }
+    }
+    pub fn info(&self) -> String {
+        let title = self.title.as_ref().map(|t| format!("<{}>", t)).unwrap_or("".to_string());
+        let info = self.additional_info.as_ref().map(|f| format!("{} {} {}", '{', f.iter().map(|(k, v)| format!("{} = {}", k, v)).collect::<Vec<String>>().join(", "), '}')).unwrap_or("".to_string());
+        let tag_count = self.tags.as_ref().map(|f| format!("{} tags", f.len()));
+        let book_count = self.books.as_ref().map(|f| format!("{} books", f.len()));
+        let relation_count = self.relations.as_ref().map(|f| format!("{} relations", f.len()));
+        let counts = vec![tag_count, book_count, relation_count].iter().filter_map(|f| f.as_ref()).map(|f| f.as_str()).collect::<Vec<&str>>().join(", ");
+        let r = vec![title, info, counts];
+        let ret: Vec<&str> = r.iter().filter_map(|f| if f.is_empty() { Option::Some(f.as_str()) }else{ Option::None }).collect();
+        ret.join(" ")
     }
 }

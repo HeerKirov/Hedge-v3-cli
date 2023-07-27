@@ -1,6 +1,7 @@
 use std::error::Error;
 use reqwest::Method;
 use serde::{Serialize, Deserialize};
+use serde_json::json;
 use super::super::server::{ServerManager, ListResult};
 
 
@@ -23,6 +24,12 @@ impl <'t> SourceDataModule<'t> {
     }
     pub async fn _get(&mut self, source_site: &str, source_id: i64) -> Result<SourceDataDetailRes, Box<dyn Error>> {
         self.server_manager.req(Method::GET, format!("/api/source-data/{source_site}/{source_id}")).await
+    }
+    pub async fn create(&mut self, source_site: &str, source_id: i64, form: &SourceDataUpdateForm) -> Result<(), Box<dyn Error>> {
+        let mut body = serde_json::to_value(form)?;
+        body["sourceSite"] = json!(source_site);
+        body["sourceId"] = json!(source_id);
+        self.server_manager.req_without_res(Method::POST, format!("/api/source-data"), body).await
     }
     pub async fn update(&mut self, source_site: &str, source_id: i64, form: &SourceDataUpdateForm) -> Result<(), Box<dyn Error>> {
         let body = serde_json::to_value(form)?;

@@ -9,8 +9,43 @@ userdata_path = "~/.config/Hedge-v3"
 [download]
 waiting_interval = 10
 timeout_interval = 20
-proxy = "http://127.0.0.1:1087"
+proxy = "http://127.0.0.1:8080"
+available_sites = [
+    { site = "sankakucomplex", rule = "sankakucomplex" }
+]
 
-[[download.available_sites]]
+[connect]
+driver = "sqlite"
+url = "~/data.db"
+query = """
+ SELECT source AS site, pid AS `id`, tags, relations, meta
+ FROM meta
+ WHERE status = 1 AND NOT deleted AND source IN $site AND folder IN $split
+ ORDER BY create_time
+ LIMIT $limit
+"""
+
+[connect.parser.complex]
 site = "sankakucomplex"
-rule = "sankakucomplex"
+
+tag.selector = "tags"
+tag.code = "name"
+tag.name = "name"
+tag.other_name = "title"
+tag.type = "type"
+
+book.selector = "relations.pools"
+book.code = "id"
+book.title = "name"
+book.other_title = "name_ja"
+
+relation.selector = [ "relations.parent", "relations.children" ]
+additional_info = { md5 = "meta.md5", "source" = "meta.source" }
+
+translate_underscore_to_space = [
+    "tag.code",
+    "tag.name",
+    "tag.other_name",
+    "book.title",
+    "book.other_title"
+]
