@@ -1,6 +1,6 @@
 use std::{path::PathBuf, io::stdin, error::Error};
 use serde::Deserialize;
-use crate::{module::api::{bulk::{BulkModule, SourceDataBulkForm, TagBulkForm, TopicBulkForm, AuthorBulkForm}, setting::{MetaOptionUpdateForm, QueryOptionUpdateForm, ImportOptionUpdateForm, FileOptionUpdateForm, FindSimilarOptionUpdateForm, SettingModule, SourceSiteUpdateForm}}, utils::error::ApplicationError};
+use crate::{module::api::{bulk::{BulkModule, SourceDataBulkForm, TagBulkForm, TopicBulkForm, AuthorBulkForm}, setting::{MetaOptionUpdateForm, QueryOptionUpdateForm, ImportOptionUpdateForm, StorageOptionUpdateForm, FindSimilarOptionUpdateForm, SettingModule, SourceSiteUpdateForm}}, utils::error::ApplicationError};
 use super::Context;
 
 pub enum ApplyInputType {
@@ -108,7 +108,7 @@ pub async fn apply(context: &mut Context<'_>, input: &Vec<ApplyInputType>, verbo
             }
         }
         if let Some(b) = setting.file {
-            match setting_module.set_file_option(&b).await {
+            match setting_module.set_storage_option(&b).await {
                 Err(e) => eprintln!("Update setting.file failed. {}", e),
                 Ok(_) => println!("Update setting.file succeed.")
             }
@@ -317,7 +317,7 @@ pub struct ApplyFileSetting {
     pub meta: Option<MetaOptionUpdateForm>,
     pub query: Option<QueryOptionUpdateForm>,
     pub import: Option<ImportOptionUpdateForm>,
-    pub file: Option<FileOptionUpdateForm>,
+    pub file: Option<StorageOptionUpdateForm>,
     #[serde(alias = "find_similar", alias = "findSimilar")]
     pub find_similar: Option<FindSimilarOptionUpdateForm>,
     #[serde(alias = "source_sites", alias = "sites", alias = "sourceSites")]

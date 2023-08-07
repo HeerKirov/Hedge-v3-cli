@@ -12,7 +12,7 @@ impl <'t> SettingModule<'t> {
     pub fn new(server_manager: &'t ServerManager) -> SettingModule {
         SettingModule { server_manager }        
     }
-    pub async fn _get_file_option(&mut self) -> Result<FileOption, Box<dyn Error>> {
+    pub async fn _get_storage_option(&mut self) -> Result<StorageOption, Box<dyn Error>> {
         self.server_manager.req(Method::GET, "/api/setting/file").await
     }
     pub async fn _get_find_similar_option(&mut self) -> Result<FindSimilarOption, Box<dyn Error>> {
@@ -30,7 +30,7 @@ impl <'t> SettingModule<'t> {
     pub async fn _get_source_sites(&mut self) -> Result<Vec<SourceSite>, Box<dyn Error>> {
         self.server_manager.req(Method::GET, "/api/setting/source/sites").await
     }
-    pub async fn set_file_option(&mut self, bulks: &FileOptionUpdateForm) -> Result<(), Box<dyn Error>> {
+    pub async fn set_storage_option(&mut self, bulks: &StorageOptionUpdateForm) -> Result<(), Box<dyn Error>> {
         let body = serde_json::to_value(bulks)?;
         self.server_manager.req_without_res(Method::PATCH, "/api/setting/file", body).await
     }
@@ -57,11 +57,21 @@ impl <'t> SettingModule<'t> {
 }
 
 #[derive(Deserialize)]
-pub struct FileOption {
+pub struct StorageOption {
+    #[serde(rename = "storagePath")]
+    pub storage_path: Option<String>,
     #[serde(rename = "autoCleanTrashes")]
     pub auto_clean_trashes: bool,
     #[serde(rename = "autoCleanTrashesIntervalDay")]
-    pub auto_clean_trashes_interval_day: i32
+    pub auto_clean_trashes_interval_day: i32,
+    #[serde(rename = "autoCleanCaches")]
+    pub auto_clean_caches: bool,
+    #[serde(rename = "autoCleanCachesIntervalDay")]
+    pub auto_clean_caches_interval_day: i32,
+    #[serde(rename = "blockMaxSizeMB")]
+    pub block_max_size: i64,
+    #[serde(rename = "blockMaxCount")]
+    pub block_max_count: i32
 }
 
 #[derive(Deserialize)]
@@ -90,8 +100,6 @@ pub struct QueryOption {
 
 #[derive(Deserialize)]
 pub struct MetaOption {
-    #[serde(rename = "scoreDescriptions")]
-    pub score_descriptions: bool,
     #[serde(rename = "autoCleanTagme")]
     pub auto_clean_tagme: bool,
     #[serde(rename = "topicColors")]
@@ -110,8 +118,8 @@ pub struct ImportOption {
     pub set_tagme_of_source: bool,
     #[serde(rename = "setOrderTimeBy")]
     pub set_order_time_by: String,
-    #[serde(rename = "setPartitionTimeDelay")]
-    pub set_partition_time_delay: i64,
+    #[serde(rename = "setPartitionTimeDelayHour")]
+    pub set_partition_time_delay_hour: i64,
     #[serde(rename = "sourceAnalyseRules")]
     pub source_analyse_rules: Vec<SourceAnalyseRule>,
     #[serde(rename = "watchPaths")]
@@ -128,8 +136,8 @@ pub struct ImportOption {
 pub struct SourceSite {
     pub name: String,
     pub title: String,
-    #[serde(rename = "hasSecondaryId")]
-    pub has_secondary_id: bool,
+    #[serde(rename = "partMode")]
+    pub part_mode: String,
     #[serde(rename = "availableAdditionalInfo")]
     pub available_additional_info: Vec<AvailableAdditionalInfo>,
     #[serde(rename = "sourceLinkGenerateRules")]
@@ -138,11 +146,21 @@ pub struct SourceSite {
 
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(deny_unknown_fields)]
-pub struct FileOptionUpdateForm {
+pub struct StorageOptionUpdateForm {
+    #[serde(rename = "storagePath")]
+    pub storage_path: Option<String>,
     #[serde(rename = "autoCleanTrashes", alias = "auto_clean_trashes", skip_serializing_if = "Option::is_none")]
     pub auto_clean_trashes: Option<bool>,
     #[serde(rename = "autoCleanTrashesIntervalDay", alias = "auto_clean_trashes_interval_day", skip_serializing_if = "Option::is_none")]
-    pub auto_clean_trashes_interval_day: Option<i32>
+    pub auto_clean_trashes_interval_day: Option<i32>,
+    #[serde(rename = "autoCleanCaches", alias = "auto_clean_caches", skip_serializing_if = "Option::is_none")]
+    pub auto_clean_caches: Option<bool>,
+    #[serde(rename = "autoCleanCachesIntervalDay", alias = "auto_clean_caches_interval_day", skip_serializing_if = "Option::is_none")]
+    pub auto_clean_caches_interval_day: Option<i32>,
+    #[serde(rename = "blockMaxSizeMB", alias = "block_max_size", skip_serializing_if = "Option::is_none")]
+    pub block_max_size: Option<i64>,
+    #[serde(rename = "blockMaxCount", alias = "block_max_count", skip_serializing_if = "Option::is_none")]
+    pub block_max_count: Option<i32>
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -174,8 +192,6 @@ pub struct QueryOptionUpdateForm {
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(deny_unknown_fields)]
 pub struct MetaOptionUpdateForm {
-    #[serde(rename = "scoreDescriptions", alias = "score_descriptions", skip_serializing_if = "Option::is_none")]
-    pub score_descriptions: Option<bool>,
     #[serde(rename = "autoCleanTagme", alias = "auto_clean_tagme", skip_serializing_if = "Option::is_none")]
     pub auto_clean_tagme: Option<bool>,
     #[serde(rename = "topicColors", alias = "topic_colors", skip_serializing_if = "Option::is_none")]
@@ -195,8 +211,8 @@ pub struct ImportOptionUpdateForm {
     pub set_tagme_of_source: Option<bool>,
     #[serde(rename = "setOrderTimeBy", alias = "set_order_time_by", skip_serializing_if = "Option::is_none")]
     pub set_order_time_by: Option<String>,
-    #[serde(rename = "setPartitionTimeDelay", alias = "set_partition_time_delay", skip_serializing_if = "Option::is_none")]
-    pub set_partition_time_delay: Option<i64>,
+    #[serde(rename = "setPartitionTimeDelayHour", alias = "set_partition_time_delay_hour", skip_serializing_if = "Option::is_none")]
+    pub set_partition_time_delay_hour: Option<i64>,
     #[serde(rename = "sourceAnalyseRules", alias = "source_analyse_rules", skip_serializing_if = "Option::is_none")]
     pub source_analyse_rules: Option<Vec<SourceAnalyseRule>>,
     #[serde(rename = "watchPaths", alias = "watch_paths", skip_serializing_if = "Option::is_none")]
@@ -215,8 +231,8 @@ pub struct SourceSiteUpdateForm {
     pub name: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub title: Option<String>,
-    #[serde(rename = "hasSecondaryId", alias = "has_secondary_id", skip_serializing_if = "Option::is_none")]
-    pub has_secondary_id: Option<bool>,
+    #[serde(rename = "partMode", alias = "part_mode", skip_serializing_if = "Option::is_none")]
+    pub part_mode: Option<String>,
     #[serde(rename = "availableAdditionalInfo", alias = "available_additional_info", skip_serializing_if = "Option::is_none")]
     pub available_additional_info: Option<Vec<AvailableAdditionalInfo>>,
     #[serde(rename = "sourceLinkGenerateRules", alias = "source_link_generate_rules", skip_serializing_if = "Option::is_none")]
@@ -262,8 +278,10 @@ pub struct SourceAnalyseRule {
     pub regex: String,
     #[serde(rename = "idGroup", alias = "id_group")]
     pub id_group: String,
-    #[serde(rename = "secondaryIdGroup", alias = "secondary_id_group")]
-    pub secondary_id_group: Option<String>,
+    #[serde(rename = "partGroup", alias = "part_group")]
+    pub part_group: Option<String>,
+    #[serde(rename = "partNameGroup", alias = "part_name_group")]
+    pub part_name_group: Option<String>,
     pub extras: Option<Vec<SourceAnalyseRuleExtra>>
 }
 

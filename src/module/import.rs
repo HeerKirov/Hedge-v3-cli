@@ -2,7 +2,7 @@ use std::{path::PathBuf, error::Error};
 use chrono::NaiveDate;
 use clap::ValueEnum;
 use reqwest::Method;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use serde_json::json;
 use super::server::{ServerManager, ListResult, IdWithWarning};
 
@@ -59,21 +59,34 @@ impl OrderTimeType {
     }
 }
 
+#[derive(Deserialize, Serialize)]
+pub struct SourceDataPath {
+    #[serde(rename = "sourceSite", alias = "source_site", alias = "id")]
+    pub source_site: String,
+    #[serde(rename = "sourceId", alias = "source_id", alias = "id")]
+    pub source_id: i64,
+    #[serde(rename = "sourcePart", alias = "source_part", alias = "part")]
+    pub source_part: Option<i32>,
+    #[serde(rename = "sourcePartName", alias = "source_part_name", alias = "part_name")]
+    pub source_part_name: Option<String>
+}
+
+#[derive(Deserialize)]
+pub struct NullableFilePath {
+    pub original: String,
+    pub thumbnail: Option<String>,
+    pub sample: Option<String>
+}
+
 #[derive(Deserialize)]
 pub struct ImportImageRes {
     pub id: i32,
-    pub file: String,
-    #[serde(rename = "thumbnailFile")]
-    pub thumbnail_file: Option<String>,
-    #[serde(rename = "fileName")]
-    pub file_name: Option<String>,
-    #[serde(rename = "sourceSite")]
-    pub source_site: Option<String>,
-    #[serde(rename = "sourceId")]
-    pub source_id: Option<i64>,
-    #[serde(rename = "sourcePart")]
-    pub source_part: Option<i32>,
+    #[serde(rename = "filePath")]
+    pub file_path: NullableFilePath,
+    pub source: Option<SourceDataPath>,
     pub tagme: Vec<String>,
+    #[serde(rename = "originFileName")]
+    pub file_name: Option<String>,
     #[serde(rename = "partitionTime")]
     pub partition_time: String,
     #[serde(rename = "orderTime")]
