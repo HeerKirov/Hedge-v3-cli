@@ -113,16 +113,16 @@ pub async fn apply(context: &mut Context<'_>, input: &Vec<ApplyInputType>, verbo
                 Ok(_) => println!("Update setting.file succeed.")
             }
         }
-        if let Some(b) = setting.import {
-            match setting_module.set_import_option(&b).await {
-                Err(e) => eprintln!("Update setting.import failed. {}", e),
-                Ok(_) => println!("Update setting.import succeed.")
-            }
-        }
         if let Some(b) = setting.source_sites {
             match setting_module.set_source_sites(&b).await {
                 Err(e) => eprintln!("Update setting.source_sites failed. {}", e),
                 Ok(_) => println!("Update setting.source_sites succeed.")
+            }
+        }
+        if let Some(b) = setting.import {
+            match setting_module.set_import_option(&b).await {
+                Err(e) => eprintln!("Update setting.import failed. {}", e),
+                Ok(_) => println!("Update setting.import succeed.")
             }
         }
     }
