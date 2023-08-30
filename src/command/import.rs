@@ -34,14 +34,49 @@ pub async fn add(context: &mut Context<'_>, files: &Vec<PathBuf>, remove: bool) 
             return
         }
 
+        let mut success = 0;
+        let mut failed = 0;
         let mut import_module = ImportModule::new(context.server_manager);
         for file in files {
-            if let Err(e) = import_module.add(file, remove).await {
-                println!("{} add failed. {}", file.to_str().unwrap(), e.to_string());
+            if file.is_dir() {
+                match std::fs::read_dir(file) {
+                    Ok(items) => for item in items {
+                        if let Ok(entry) = item {
+                            if entry.file_type().is_ok_and(|f| f.is_file()) {
+                                let mut f = file.clone();
+                                f.push(&entry.file_name());
+                                if let Err(e) = import_module.add(&f, remove).await {
+                                    println!("\x1b[1;33m{}\x1b[1;31m add failed. {}\x1b[0m", f.to_str().unwrap(), e.to_string());
+                                    failed += 1;
+                                }else{
+                                    println!("\x1b[1;33m{}\x1b[0m added.", f.to_str().unwrap());
+                                    success += 1;
+                                }
+                            }
+                        }
+                    },
+                    Err(e) => {
+                        println!("\x1b[1;33m{}\x1b[1;31m cannot read dir. {}\x1b[0m", file.to_str().unwrap(), e.to_string());
+                        failed += 1;
+                    }
+                }
+                
+            }else if file.is_file() {
+                if let Err(e) = import_module.add(file, remove).await {
+                    println!("\x1b[1;33m{}\x1b[1;31m add failed. {}\x1b[0m", file.to_str().unwrap(), e.to_string());
+                    failed += 1;
+                }else{
+                    println!("\x1b[1;33m{}\x1b[0m added.", file.to_str().unwrap());
+                    success += 1;
+                }
             }else{
-                println!("{} added.", file.to_str().unwrap());
+                println!("\x1b[1;33m{}\x1b[1;31m unsupported file.\x1b[0m", file.to_str().unwrap());
+                failed += 1;
             }
         }
+
+        println!("---");
+        println!("Import completed. Success {} files(s), failed {} files(s).", success, failed);
     }
 }
 
