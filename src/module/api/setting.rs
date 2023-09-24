@@ -141,7 +141,9 @@ pub struct SourceSite {
     #[serde(rename = "availableAdditionalInfo")]
     pub available_additional_info: Vec<AvailableAdditionalInfo>,
     #[serde(rename = "sourceLinkGenerateRules")]
-    pub source_link_generate_rules: Vec<String>
+    pub source_link_generate_rules: Vec<String>,
+    #[serde(rename = "availableTypes")]
+    pub available_types: Vec<String>
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -236,7 +238,9 @@ pub struct SourceSiteUpdateForm {
     #[serde(rename = "availableAdditionalInfo", alias = "available_additional_info", skip_serializing_if = "Option::is_none")]
     pub available_additional_info: Option<Vec<AvailableAdditionalInfo>>,
     #[serde(rename = "sourceLinkGenerateRules", alias = "source_link_generate_rules", skip_serializing_if = "Option::is_none")]
-    pub source_link_generate_rules: Option<Vec<String>>
+    pub source_link_generate_rules: Option<Vec<String>>,
+    #[serde(rename = "availableTypes", alias = "available_types", skip_serializing_if = "Option::is_none")]
+    pub available_types: Option<Vec<String>>
 }
 
 #[derive(Deserialize, Serialize, Debug)]

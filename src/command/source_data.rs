@@ -106,7 +106,11 @@ pub async fn download(context: &mut Context<'_>) {
     }
     
     println!("---");
-    println!("Processing completed. Success {} item(s), failed {} item(s).", success, failed);
+    if failed > 0 {
+        println!("Processing completed. Success {} item(s), failed \x1b[1;31m{}\x1b[0m item(s).", success, failed);
+    }else{
+        println!("Processing completed. Success {} item(s), failed 0 item(s).", success);
+    }
 }
 
 pub async fn connect(context: &mut Context<'_>, split: &Vec<String>, limit: Option<u32>, update: bool, verbose: bool) {
@@ -189,5 +193,9 @@ pub async fn connect(context: &mut Context<'_>, split: &Vec<String>, limit: Opti
     }
 
     if verbose { println!("---") }
-    println!("Processing completed. Success {} item(s), failed {} item(s).", success, index - success);
+    if index - success > 0 {
+        println!("Processing completed. Success {} item(s), failed \x1b[1;31m{}\x1b[0m item(s).", success, index - success);
+    }else{
+        println!("Processing completed. Success {} item(s), failed 0 item(s).", success);
+    }
 }

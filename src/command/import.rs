@@ -76,7 +76,11 @@ pub async fn add(context: &mut Context<'_>, files: &Vec<PathBuf>, remove: bool) 
         }
 
         println!("---");
-        println!("Import completed. Success {} files(s), failed {} files(s).", success, failed);
+        if failed > 0 {
+            println!("Import completed. Success {} files(s), failed \x1b[1;31m{}\x1b[0m files(s).", success, failed);
+        }else{
+            println!("Import completed. Success {} files(s), failed 0 files(s).", success);
+        }
     }
 }
 
@@ -136,7 +140,7 @@ pub async fn save(context: &mut Context<'_>) {
     }
     if (&r.errors).len() > 0 {
         println!("---");
-        println!("{} item(s) saved. {} item(s) save failed.", r.total, r.errors.len());
+        println!("{} item(s) saved. \x1b[1;31m{}\x1b[0m item(s) save failed.", r.total, r.errors.len());
     }else{
         println!("{} item(s) saved.", r.total);
     }
