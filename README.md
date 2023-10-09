@@ -32,3 +32,12 @@ cargo build --release
 * 对于MacOS，这个文件是`Library/Application Support/Hedge-v3/cli/config.toml`。
 
 之后，将`target/release/hedge_cli`存放至任意位置运行。
+
+### Completion
+
+执行`completion`命令，选择所用的shell类型，以获取命令补全脚本。
+```sh
+hedge completion zsh > _hedge
+```
+随后将`_hedge`脚本放置到补全脚本目录即可。  
+例如，bash可放在`/usr/share/bash-completion/completions`，zsh可放在`/usr/share/zsh/vendor-completions`。

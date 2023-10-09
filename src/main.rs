@@ -3,7 +3,8 @@ mod command;
 mod module;
 mod utils;
 
-use clap::Parser;
+use clap::{Parser, CommandFactory};
+use clap_complete::generate;
 use cli::{Cli, Import, Channel, Server, SourceData};
 use command::apply::ApplyInputType;
 use module::local_data::LocalDataManager;
@@ -32,7 +33,9 @@ async fn main() {
         Cli::Server(server) => match server {
             Server::Status => command::server::status(&mut context).await,
             Server::Start => command::server::start(&mut context).await,
-            Server::Stop => command::server::stop(&mut context).await
+            Server::Stop => command::server::stop(&mut context).await,
+            Server::Kill => command::server::kill(&mut context).await,
+            Server::Log => command::server::log(&context)
         }
         Cli::Apply(apply) => {
             let mut input: Vec<ApplyInputType> = Vec::new();
@@ -66,5 +69,6 @@ async fn main() {
             SourceData::Download => command::source_data::download(&mut context).await,
             SourceData::Connect { split, limit, update, verbose } => command::source_data::connect(&mut context, &split, limit, update, verbose).await
         }
+        Cli::Completion(completion) => generate(completion.shell, &mut Cli::command(), "hedge", &mut std::io::stdout())
     }
 }

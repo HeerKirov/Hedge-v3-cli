@@ -1,4 +1,5 @@
-use std::{path::PathBuf, fs::{self, File}, fmt, process::{Command, Stdio}, time::Duration, error::Error, sync::Arc};
+use std::{path::PathBuf, fs, fmt, process::{Command, Stdio}, time::Duration, error::Error, sync::Arc, io::{BufReader, prelude::BufRead}};
+use sysinfo::{System, SystemExt, Pid, Signal, ProcessExt};
 use reqwest::{Method, IntoUrl};
 use serde::{Deserialize, Serialize};
 use serde_json;
@@ -101,6 +102,33 @@ impl ServerManager {
             Err(e) => panic!("Error occurred when set permanent. {}", e)
         }
     }
+    pub fn kill(&self) {
+        let pid_file = self.read_pid_file();
+        if let Some(pid_file) = pid_file {
+            let s = System::new_all();
+            if let Some(process) = s.process(Pid::from(pid_file.pid as usize)) {
+                if process.kill_with(Signal::Kill).is_none() {
+                    panic!("This signal isn't supported on this platform.")
+                }
+            }
+        }
+    }
+    pub fn log(&self) {
+        let log_path = self.appdata_path.join("channel").join(&self.channel).join("server.log");
+        match fs::File::open(&log_path) {
+            Err(e) => if e.kind() == std::io::ErrorKind::NotFound {
+                return
+            }else{
+                panic!("Read log file {} failed. {}", log_path.to_str().unwrap(), e)
+            },
+            Ok(b) => {
+                let buf = BufReader::new(b);
+                for line in buf.lines() {
+                    println!("{}", line.unwrap());
+                }
+            }
+        }
+    }
     async fn single_signal(&self, interval: i64) -> Result<(), Box<dyn Error>> {
         let body = serde_json::json!({
             "interval": interval,
@@ -117,8 +145,8 @@ impl ServerManager {
         let args = ["--channel-path", channel_path.to_str().unwrap()];
         
         let log_path = channel_path.join("server.log");
-        let out_file = File::create(&log_path).unwrap();
-        let err_file = File::create(&log_path).unwrap();
+        let out_file = fs::File::create(&log_path).unwrap();
+        let err_file = fs::File::create(&log_path).unwrap();
         let stdout = Stdio::from(out_file);
         let stderr = Stdio::from(err_file);
 
@@ -268,7 +296,6 @@ impl MaintainComponent {
         Result::Ok(())
     }
 }
-
 
 #[derive(Deserialize)]
 struct PidFile {

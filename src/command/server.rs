@@ -43,3 +43,14 @@ pub async fn stop(context: &mut Context<'_>) {
         println!("Backend service exited permanent mode.")
     }
 }
+
+pub async fn kill(context: &mut Context<'_>) {
+    if context.server_manager.status().await.status != ServerStatusType::Stop {
+        context.server_manager.kill();
+        println!("Backend service is killed.")
+    }
+}
+
+pub fn log(context: &Context<'_>) {
+    context.server_manager.log();
+}

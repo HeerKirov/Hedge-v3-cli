@@ -1,6 +1,7 @@
 use std::path::PathBuf;
 use clap::{Args, Parser, Subcommand};
 use chrono::NaiveDate;
+use clap_complete::Shell;
 use crate::module::import::OrderTimeType;
 
 #[derive(Parser)]
@@ -17,7 +18,9 @@ pub enum Cli {
     #[command(subcommand, about = "File import management")]
     Import(Import),
     #[command(subcommand, about = "Source data management")]
-    SourceData(SourceData)
+    SourceData(SourceData),
+    #[command(about = "Generate shell completions")]
+    Completion(Completion),
 }
 
 #[derive(Args)]
@@ -50,7 +53,11 @@ pub enum Server {
     #[command(about = "Start service and keep it running")]
     Start,
     #[command(about = "Stop service")]
-    Stop
+    Stop,
+    #[command(about = "Force kill service")]
+    Kill,
+    #[command(about = "Print server.log")]
+    Log
 }
 
 #[derive(Subcommand)]
@@ -105,3 +112,8 @@ pub enum SourceData {
     }
 }
 
+#[derive(Args)]
+pub struct Completion {
+    #[arg(help = "shell type")]
+    pub shell: Shell
+}
