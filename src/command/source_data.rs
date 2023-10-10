@@ -174,8 +174,31 @@ pub async fn connect(context: &mut Context<'_>, split: &Vec<String>, limit: Opti
                                         }
                                     }
                                 }else{
-                                    println!("\x1b[1;33m Already exists, skip it.\x1b[0m");
-                                    success += 1;
+                                    match source_data_module.get(site, *id).await {
+                                        Ok(sd) => {
+                                            if sd.status == "NOT_EDITED" {
+                                                match source_data_module.update(site, *id, &form).await {
+                                                    Ok(_) => {
+                                                        println!("\x1b[1;32m NOT_EDITED exists, Updated. {}\x1b[0m", result.info());
+                                                        success += 1;
+                                                    },
+                                                    Err(e) => if let Some(e) = e.downcast_ref::<ApiResultError>() {
+                                                        println!("\x1b[1;31m Failed. {}\x1b[0m", e)
+                                                    }else{
+                                                        println!("\x1b[1;31m Failed. Request error: {}\x1b[0m", e)
+                                                    }
+                                                }
+                                            }else{
+                                                println!("\x1b[1;33m Already exists, skip it.\x1b[0m");
+                                                success += 1;
+                                            }
+                                        },
+                                        Err(e) => if let Some(e) = e.downcast_ref::<ApiResultError>() {
+                                            println!("\x1b[1;31m Failed. {}\x1b[0m", e)
+                                        }else{
+                                            println!("\x1b[1;31m Failed. Request error: {}\x1b[0m", e)
+                                        }
+                                    }
                                 }
                             }else{
                                 println!("\x1b[1;31m Failed. {}\x1b[0m", e)
