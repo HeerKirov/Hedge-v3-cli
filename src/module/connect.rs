@@ -176,7 +176,13 @@ fn stat_read_tag(stat: &sqlite::Statement, tag: &ConnectParserTag) -> Result<Vec
                 let name = if let Some(ref n) = tag.name { field_selector_option(item, &n, "Tag.name")? }else{ Option::None };
                 let other_name = if let Some(ref n) = tag.other_name { field_selector_option(item, &n, "Tag.other_name")? }else{ Option::None };
                 let tag_type = if let Some(ref n) = tag.tag_type { field_selector_option(item, &n, "Tag.type")? }else{ Option::None };
-                ret.push(DownloadTag { code, name, other_name, tag_type })
+                if code.is_empty() {
+                    if (name.is_some() && !name.unwrap().is_empty()) || (other_name.is_some() && !other_name.unwrap().is_empty()) {
+                        return Result::Err(Box::new(ApplicationError::new(&format!("Tag code is empty but name/other_name not. (name/other_name={})", tag.name.as_ref().unwrap_or_else(|| tag.other_name.as_ref().unwrap()))))) 
+                    }
+                }else{
+                    ret.push(DownloadTag { code, name, other_name, tag_type })
+                }
             }
             Result::Ok(ret)
         }else if let Some(_) = json.as_null() {

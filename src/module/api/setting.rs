@@ -298,7 +298,9 @@ pub struct SourceAnalyseRuleExtra {
     #[serde(rename = "tagType", alias = "tag_type")]
     pub tag_type: Option<String>,
     #[serde(rename = "additionalInfoField", alias = "additional_info_field")]
-    pub additional_info_field: Option<String>
+    pub additional_info_field: Option<String>,
+    #[serde(rename = "translateUnderscoreToSpace", alias = "translate_underscore_to_space")]
+    pub translate_underscore_to_space: Option<bool>
 }
 
 #[derive(Deserialize, Serialize, Debug)]
