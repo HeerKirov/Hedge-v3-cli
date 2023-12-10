@@ -12,10 +12,10 @@ Supported platform: `Linux`, `macOS`
 
 * `Rust stable >= 1.70.0`
 
-在开发过程中，建议使用单独的配置文件，与生产环境隔离。使用`LOCAL_CONFIG_FILE`环境变量显式指定一个配置文件。
+在开发过程中，建议使用单独的配置文件，与生产环境隔离。使用`LOCAL_CONFIG_PATH`环境变量显式指定一个配置文件。
 ```sh
 cp config.template.toml config.local.toml
-LOCAL_CONFIG_FILE=./config.local.toml cargo run -- --help
+LOCAL_CONFIG_PATH=./config.local.toml cargo run -- --help
 ```
 
 ## Build

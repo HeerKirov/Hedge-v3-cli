@@ -28,7 +28,11 @@ impl <'l> ChannelManager<'l> {
         match fs::read_dir(&self.channel_path) {
             Err(e) => panic!("Cannot read channel dir {}: {}", self.channel_path.to_str().unwrap(), e),
             Ok(d) => {
-                d.filter_map(|e| e.ok().map(|f| f.file_name().to_str().unwrap().to_string())).collect()
+                d.filter_map(|e| {
+                    e.ok()
+                        .filter(|f| f.file_type().is_ok_and(|f| f.is_dir()) && !f.file_name().to_str().unwrap().starts_with("."))
+                        .map(|f| f.file_name().to_str().unwrap().to_string())
+                }).collect()
             }
         }
     }

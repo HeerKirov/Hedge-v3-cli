@@ -19,6 +19,8 @@ pub enum Cli {
     Import(Import),
     #[command(subcommand, about = "Source data management")]
     SourceData(SourceData),
+    #[command(subcommand, about = "Toolbox")]
+    Tool(Tool),
     #[command(about = "Generate shell completions")]
     Completion(Completion),
 }
@@ -109,6 +111,17 @@ pub enum SourceData {
         update: bool,
         #[arg(short, long, help = "print verbose output")]
         verbose: bool,
+    }
+}
+
+#[derive(Subcommand)]
+pub enum Tool {
+    #[command(about = "Import folder struct from dir")]
+    ImportFolder {
+        #[arg(help = "local dir")]
+        dir: PathBuf,
+        #[arg(long, help = "dry run")]
+        dry_run: bool
     }
 }
 

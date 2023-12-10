@@ -5,7 +5,7 @@ mod utils;
 
 use clap::{Parser, CommandFactory};
 use clap_complete::generate;
-use cli::{Cli, Import, Channel, Server, SourceData};
+use cli::{Cli, Import, Channel, Server, SourceData, Tool};
 use command::apply::ApplyInputType;
 use module::local_data::LocalDataManager;
 use module::channel::ChannelManager;
@@ -68,6 +68,9 @@ async fn main() {
             SourceData::Query { hql, limit, offset } => command::source_data::query(&mut context, hql.as_str(), offset, limit).await,
             SourceData::Download => command::source_data::download(&mut context).await,
             SourceData::Connect { split, limit, update, verbose } => command::source_data::connect(&mut context, &split, limit, update, verbose).await
+        }
+        Cli::Tool(tool) => match tool {
+            Tool::ImportFolder { dir, dry_run } => command::tool::import_folder(&mut context, &dir, dry_run).await
         }
         Cli::Completion(completion) => generate(completion.shell, &mut Cli::command(), "hedge", &mut std::io::stdout())
     }

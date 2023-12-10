@@ -2,7 +2,8 @@ use std::error::Error;
 use reqwest::Method;
 use serde::{Serialize, Deserialize};
 use serde_json::json;
-use super::super::server::{ServerManager, ListResult};
+use crate::module::import::SourceDataPath;
+use crate::module::server::{ServerManager, ListResult};
 
 
 pub struct SourceDataModule<'t> {
@@ -34,6 +35,10 @@ impl <'t> SourceDataModule<'t> {
     pub async fn update(&mut self, source_site: &str, source_id: i64, form: &SourceDataUpdateForm) -> Result<(), Box<dyn Error>> {
         let body = serde_json::to_value(form)?;
         self.server_manager.req_without_res(Method::PATCH, format!("/api/source-data/{source_site}/{source_id}"), body).await
+    }
+    pub async fn analyse_source_name(&mut self, filenames: &Vec<&str>) -> Result<Vec<SourceDataAnalyseResult>, Box<dyn Error>> {
+        let body = serde_json::to_value(filenames)?;
+        self.server_manager.req_with_body(Method::POST, format!("/api/source-data/analyse-name"), body).await
     }
 }
 
@@ -81,6 +86,15 @@ pub struct SourceDataDetailRes {
     pub create_time: String,
     #[serde(rename = "updateTime")]
     pub update_time: String
+}
+
+#[derive(Deserialize)]
+pub struct SourceDataAnalyseResult {
+    pub filename: String,
+    pub source: Option<SourceDataPath>,
+    #[serde(rename = "imageId")] 
+    pub image_id: Option<i32>,
+    pub error: Option<String>
 }
 
 #[derive(Deserialize)]

@@ -331,6 +331,11 @@ pub struct IdWithWarning {
 }
 
 #[derive(Deserialize, Serialize)]
+pub struct IdRes {
+    pub id: i32
+}
+
+#[derive(Deserialize, Serialize)]
 pub struct ErrorResult {
     pub code: String,
     pub message: String
