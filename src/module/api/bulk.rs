@@ -64,6 +64,8 @@ pub struct TagBulkForm {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub group: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub links: Option<Vec<String>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub annotations: Option<Vec<String>>,

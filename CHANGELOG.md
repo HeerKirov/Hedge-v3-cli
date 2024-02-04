@@ -1,5 +1,6 @@
 ## Bug Fixes
 * channel info将不会再在列表中显示文件、隐藏目录这类与channel无关的内容。
+* 补充apply中tag缺失的字段。
 ## Features
 * 添加从目录结构读取文件名，并倒入目录的功能。
 
