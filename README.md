@@ -40,4 +40,4 @@ cargo build --release
 hedge completion zsh > _hedge
 ```
 随后将`_hedge`脚本放置到补全脚本目录即可。  
-例如，bash可放在`/usr/share/bash-completion/completions`，zsh可放在`/usr/share/zsh/vendor-completions`。
+例如，bash可放在`/usr/share/bash-completion/completions`，zsh可放在`/usr/share/zsh/vendor-completions`(或者如`$HOME/.oh-my-zsh/completions`这类位置)。

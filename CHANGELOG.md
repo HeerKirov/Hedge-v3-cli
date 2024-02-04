@@ -1,3 +1,4 @@
+# v0.2.0
 ## Bug Fixes
 * channel info将不会再在列表中显示文件、隐藏目录这类与channel无关的内容。
 * 补充apply中tag缺失的字段。
