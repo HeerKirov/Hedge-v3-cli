@@ -70,7 +70,7 @@ async fn main() {
             SourceData::Connect { split, limit, update, verbose } => command::source_data::connect(&mut context, &split, limit, update, verbose).await
         }
         Cli::Tool(tool) => match tool {
-            Tool::ImportFolder { dir, dry_run } => command::tool::import_folder(&mut context, &dir, dry_run).await
+            Tool::ImportFolder { dir, tree, dry_run } => command::tool::import_folder(&mut context, &dir, &tree, dry_run).await
         }
         Cli::Completion(completion) => generate(completion.shell, &mut Cli::command(), "hedge", &mut std::io::stdout())
     }

@@ -118,8 +118,10 @@ pub enum SourceData {
 pub enum Tool {
     #[command(about = "Import folder struct from dir")]
     ImportFolder {
-        #[arg(help = "local dir")]
-        dir: PathBuf,
+        #[arg(short, long, help = "local dir")]
+        dir: Option<PathBuf>,
+        #[arg(short, long, help = "tree output json")]
+        tree: Option<PathBuf>,
         #[arg(long, help = "dry run")]
         dry_run: bool
     }
