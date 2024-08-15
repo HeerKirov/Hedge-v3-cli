@@ -1,4 +1,4 @@
-use crate::module::server::ServerStatusType;
+use crate::{module::server::ServerStatusType, utils::error::ApplicationError};
 
 use super::Context;
 
@@ -8,8 +8,14 @@ pub async fn status(context: &mut Context<'_>) {
     println!("Running status: {}", stat.status);
     if stat.status != ServerStatusType::Stop {
         println!("---");
+        if stat.remote_mode {
+            println!("Mode: Remote ")
+        }
         if let Some(pid) = stat.pid {
             println!("PID: {}", pid)
+        }
+        if let Some(host) = stat.host {
+            println!("Host: {}", host)
         }
         if let Some(port) = stat.port {
             println!("Port: {}", port)
@@ -46,8 +52,15 @@ pub async fn stop(context: &mut Context<'_>) {
 
 pub async fn kill(context: &mut Context<'_>) {
     if context.server_manager.status().await.status != ServerStatusType::Stop {
-        context.server_manager.kill();
-        println!("Backend service is killed.")
+        if let Err(e) = context.server_manager.kill() {
+            if let Some(e) = e.downcast_ref::<ApplicationError>() {
+                eprintln!("{}", e.message)
+            }else{
+                eprintln!("{}", e)
+            }
+        }else{
+            println!("Backend service is killed.")
+        }
     }
 }
 

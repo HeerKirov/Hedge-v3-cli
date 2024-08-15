@@ -92,24 +92,10 @@ pub async fn batch(context: &mut Context<'_>, partition_time: Option<NaiveDate>,
         }
 
         let mut import_module = ImportModule::new(context.server_manager);
-        let r = match import_module.batch(partition_time, create_time, order_time, analyse_source).await {
-            Err(e) => {
-                eprintln!("Error occrred in requesting. {}", e.to_string());
-                return
-            },
-            Ok(r) => r
+        match import_module.batch(partition_time, create_time, order_time, analyse_source).await {
+            Err(e) => eprintln!("Error occrred in requesting. {}", e.to_string()),
+            Ok(_) => println!("Batch Succeed.")
         };
-
-        if r.len() > 0 {
-            for res in &r {
-                let reason: String = res.warnings.iter().map(|e| e.message.as_str()).collect();
-                println!("-{:3}| {}", res.id, reason);
-            }
-            println!("---");
-            println!("Some items batch failed.");
-        }else{
-            println!("Batch Succeed.");
-        }
     }
 }
 
