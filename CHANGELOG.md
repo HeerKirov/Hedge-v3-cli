@@ -1,3 +1,7 @@
+# v0.3.0
+## Features
+* 软件架构更新，适配远程模式相关支持。
+
 # v0.2.0
 ## Bug Fixes
 * channel info将不会再在列表中显示文件、隐藏目录这类与channel无关的内容。
